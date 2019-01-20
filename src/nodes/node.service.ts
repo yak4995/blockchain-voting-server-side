@@ -3,11 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Node } from './interfaces/node.interface';
 import { NodeDto } from './dto/create-node.dto';
+import { RSAService } from './rsa.service';
 
 @Injectable()
 export class NodeService {
 
-  constructor(@InjectModel('Node') private readonly nodeModel: Model<Node>) {}
+  constructor(@InjectModel('KeyPair') private readonly nodeModel: Model<Node>, private readonly RSAService: RSAService) {}
 
   //создание узла первого типа
   async createChain(createNodeDto: NodeDto): Promise<Node> {

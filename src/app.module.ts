@@ -7,7 +7,6 @@ import { NodeModule } from 'nodes/node.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-//TODO: сервис на основе node-rsa
 //TODO: логирование (перехватчики), фильтры исключений, валидация узлов
 //TODO: тесты? докер? jenkins?
 

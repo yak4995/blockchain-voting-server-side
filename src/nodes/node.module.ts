@@ -5,6 +5,8 @@ import { NodeController } from './node.controller';
 import { NodeService } from './node.service';
 import { AuthModule } from 'auth/auth.module';
 import { ConfigModule } from 'config/config.module';
+import { RSAService } from './rsa.service';
+import { KeyPair } from './schemas/key-pair.schema';
 
 @Module({
   imports: [
@@ -14,11 +16,11 @@ import { ConfigModule } from 'config/config.module';
       Благодаря этому мы можем внедрить Mongoose-модель для Node в NodeService с помощью декоратора @InjectModel
       по ключу 'Node'
     */
-    MongooseModule.forFeature([{ name: 'Node', schema: NodeSchema }]),
+    MongooseModule.forFeature([{ name: 'Node', schema: NodeSchema }, { name: 'KeyPair', schema: KeyPair }]),
     AuthModule,
     ConfigModule
   ],
   controllers: [NodeController],
-  providers: [NodeService]
+  providers: [NodeService, RSAService]
 })
 export class NodeModule {}
