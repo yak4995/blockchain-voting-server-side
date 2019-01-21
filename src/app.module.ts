@@ -6,9 +6,10 @@ import { ConfigService } from './config/config.service';
 import { NodeModule } from 'nodes/node.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CryptoModule } from 'crypto/crypto.module';
 
-//TODO: логирование (перехватчики), фильтры исключений, валидация узлов
-//TODO: тесты? докер? jenkins?
+//TODO: логирование (перехватчики), фильтры исключений, валидация узлов, тесты
+//TODO: докер? jenkins?
 
 /*
   Последовательность прохождения запроса:
@@ -57,7 +58,8 @@ import { AppService } from './app.service';
         //в useFactory нужно будет инжектить ConfigService
         inject: [ConfigService],
       }),
-      NodeModule
+      NodeModule,
+      CryptoModule
   ],
   /*
     Сообщаем Nest-у, что такие провайдеры существуют, принадлежат этому модулю (вне модуля провайдеры существовать не могут)
