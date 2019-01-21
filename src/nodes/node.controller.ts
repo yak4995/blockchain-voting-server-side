@@ -21,7 +21,7 @@ export class NodeController {
     private readonly nodeService: NodeService
   ) {}
 
-  //TODO: получать узлы только указанной цепочки (выборов)
+  //TODO: превратить этот метод в несколько: получение узла по хешу, получение предка узла по хешу, получение потомков узла по хешу
   @Get()
   async root(): Promise<Node[]> {
 

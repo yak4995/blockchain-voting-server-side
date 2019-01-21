@@ -8,8 +8,16 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CryptoModule } from 'crypto/crypto.module';
 
-//TODO: логирование (перехватчики), фильтры исключений, валидация узлов, тесты
-//TODO: докер? jenkins?
+//TODO: логирование (перехватчики), фильтры исключений, валидация узлов
+//TODO: модуль для работы с внешними endpoint-ами на основе axios
+//TODO: node controller закончить (осн. логика приложения) и написать тесты для него
+//TODO: модуль для распостранения узлов по другим узлам (прелесть blockchain)
+//TODO: докер? jenkins? kubernetes? aws/DO?
+
+/*
+  Файл test.env в корне предназначен как замена .env файла для тестов Jest
+  Настройки Jest храняться в package.json
+*/
 
 /*
   Последовательность прохождения запроса:
@@ -39,7 +47,8 @@ import { CryptoModule } from 'crypto/crypto.module';
       AuthModule,
       /*
         MongooseModule нужно заимпортить в AppModule обязательно (с методом forRoot и переданым ему url подключения к базе),
-        чтобы была возможность использовать его в остальных модулях
+        чтобы была возможность использовать его в остальных модулях.
+        Mongoose сохраняет документы в коллекцию с названием класса документа (lowercase) + s
       */
       //Асинхронно создаёт экземпляр динамического (то есть заданного с параметрами при создании) модуля
       MongooseModule.forRootAsync({

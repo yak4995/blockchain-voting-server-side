@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { KeyPair } from './interfaces/key-pair.interface';
-import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { KeyPairDTO } from './dto/get-key-pair.dto';
 import * as NodeRSA from 'node-rsa';
@@ -10,17 +9,16 @@ export class RSAService {
 
     private RSAKey: NodeRSA;
 
-    constructor(@InjectModel('KeyPair') private readonly keyPairModel: Model<KeyPair>) {
+    constructor(@Inject('KeyPairModelToken') private readonly keyPairModel: Model<KeyPair>) {
         this.RSAKey = new NodeRSA();
     }
 
     async generateKeyPair(): Promise<KeyPairDTO> {
-        //иначе пара будет генериться та же :С
-        this.RSAKey = new NodeRSA();
-        this.RSAKey = this.RSAKey.generateKeyPair();
+        
+        const RSAKeyGenerator = (new NodeRSA()).generateKeyPair();
         return {
-            publicKey: this.RSAKey.exportKey('pkcs8-public-pem'),
-            privateKey: this.RSAKey.exportKey('pkcs8-private-pem')
+            publicKey: RSAKeyGenerator.exportKey('pkcs8-public-pem'),
+            privateKey: RSAKeyGenerator.exportKey('pkcs8-private-pem')
         };
     }
 

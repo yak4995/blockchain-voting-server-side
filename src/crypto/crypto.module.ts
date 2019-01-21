@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from 'auth/auth.module';
 import { RSAService } from './rsa.service';
-import { KeyPair } from './schemas/key-pair.schema';
 import { CryptoController } from './crypto.controller';
+import { rsaProviders } from './rsa.providers';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
     imports: [
@@ -13,10 +13,14 @@ import { CryptoController } from './crypto.controller';
         Благодаря этому мы можем внедрить Mongoose-модель для Node в NodeService с помощью декоратора @InjectModel
         по ключу 'Node'
       */
-      MongooseModule.forFeature([{ name: 'KeyPair', schema: KeyPair }]),
+      //MongooseModule.forFeature([{ name: 'KeyPair', schema: KeyPair }]),
+      DatabaseModule, //а этот модуль мы подключили вместо закомментированного сверху, чтобы можно было тестировать сервисы, требующие mongoose-модели
       AuthModule
     ],
     controllers: [CryptoController],
-    providers: [RSAService]
-  })
-  export class CryptoModule {}
+    providers: [
+      RSAService, 
+      ...rsaProviders //динамический сервис для иньекции по ключу KeyPairModelToken (то есть создания mongoose-модели для KeyPair)
+    ]
+})
+export class CryptoModule {}

@@ -27,7 +27,6 @@ export class NodeService {
     return await createdNode.save();
   }
 
-  //TODO: получать узлы только указанной цепочки
   async findAll(): Promise<Node[]> {
     return await this.nodeModel.find().exec();
   }
