@@ -9,7 +9,6 @@ import { AppService } from './app.service';
 import { CryptoModule } from './crypto/crypto.module';
 import { LoggerModule } from './logger/app-logger.module';
 
-//TODO: фильтры исключений, валидация узлов и пар ключей
 //TODO: модуль для работы с внешними endpoint-ами на основе axios
 //TODO: node controller закончить (осн. логика приложения) и написать тесты для него
 //TODO: модуль для распостранения узлов по другим узлам (прелесть blockchain)

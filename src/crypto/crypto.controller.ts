@@ -4,7 +4,8 @@ import {
     UseGuards,
     Post,
     Body,
-    Inject
+    Inject,
+    UsePipes
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RSAService } from './rsa.service';
@@ -12,6 +13,7 @@ import { KeyPairDTO } from './dto/get-key-pair.dto';
 import { SignPacketDTO } from './dto/sign-packet.dto';
 import { VerifyPacketDTO } from './dto/verify-packet.dto';
 import { AppLogger } from '../logger/app-logger.service';
+import { ValidatorPipe } from '../common/validator.pipe';
 
 @Controller('crypto')
 export class CryptoController {
@@ -41,6 +43,7 @@ export class CryptoController {
 
   //endpoint-helper для создания ЭЦП для сообщения
   @Post('sign')
+  @UsePipes(ValidatorPipe)
   async sign(@Body() signPacket: SignPacketDTO) {
 
     //TODO: валидация
@@ -49,6 +52,7 @@ export class CryptoController {
 
   //endpoint-helper для верификации ЭЦП
   @Post('verify')
+  @UsePipes(ValidatorPipe)
   async verify(@Body() verifyPacket: VerifyPacketDTO) {
 
     //TODO: валидация

@@ -5,8 +5,7 @@ import {
     Post, 
     Body, 
     Res, 
-    UsePipes, 
-    ValidationPipe, 
+    UsePipes,
     HttpStatus, 
     Inject
 } from '@nestjs/common';
@@ -15,6 +14,7 @@ import { Node } from './interfaces/node.interface';
 import { NodeDto } from './dto/create-node.dto';
 import { JwtAuthGuard } from 'auth/guards/jwt-auth.guard';
 import { AppLogger } from 'logger/app-logger.service';
+import { ValidatorPipe } from '../common/validator.pipe';
 
 @Controller('nodes')
 export class NodeController {
@@ -34,7 +34,7 @@ export class NodeController {
   //создание узла первого типа (требует авторизации, потому что регистрируют выборы только с узла-клиента)
   @Post('create-chain')
   @UseGuards(JwtAuthGuard) //AuthGuard так как мы не передали ему стратегию, использует её по умолч. (для OAuth2 пришлось бы передать 'bearer')
-  @UsePipes(ValidationPipe)
+  @UsePipes(ValidatorPipe)
   async createChain(@Res() res, @Body() createNodeDto: NodeDto) {
 
     let createdNode: Node = await this.nodeService.createChain(createNodeDto);
@@ -43,7 +43,7 @@ export class NodeController {
 
   //создание узла второго типа
   @Post('register-voter')
-  @UsePipes(ValidationPipe)
+  @UsePipes(ValidatorPipe)
   async registerVoter(@Res() res, @Body() createNodeDto: NodeDto) {
 
     let createdNode: Node = await this.nodeService.registerVoter(createNodeDto);
@@ -52,7 +52,7 @@ export class NodeController {
 
   //создание узла четвертого типа (при необходимости создаёт узел третьего типа)
   @Post('vote')
-  @UsePipes(ValidationPipe)
+  @UsePipes(ValidatorPipe)
   async registerVote(@Res() res, @Body() createNodeDto: NodeDto) {
 
     let createdNode: Node = await this.nodeService.registerVote(createNodeDto);
