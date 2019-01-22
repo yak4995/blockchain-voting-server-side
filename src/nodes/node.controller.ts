@@ -7,18 +7,21 @@ import {
     Res, 
     UsePipes, 
     ValidationPipe, 
-    HttpStatus 
+    HttpStatus, 
+    Inject
 } from '@nestjs/common';
 import { NodeService } from './node.service';
 import { Node } from './interfaces/node.interface';
 import { NodeDto } from './dto/create-node.dto';
 import { JwtAuthGuard } from 'auth/guards/jwt-auth.guard';
+import { AppLogger } from 'logger/app-logger.service';
 
 @Controller('nodes')
 export class NodeController {
 
   constructor(
-    private readonly nodeService: NodeService
+    private readonly nodeService: NodeService,
+    @Inject('logger') private readonly loggerService: AppLogger
   ) {}
 
   //TODO: превратить этот метод в несколько: получение узла по хешу, получение предка узла по хешу, получение потомков узла по хешу

@@ -7,7 +7,9 @@ import { NodeDto } from './dto/create-node.dto';
 @Injectable()
 export class NodeService {
 
-  constructor(@InjectModel('Node') private readonly nodeModel: Model<Node>) {}
+  constructor(
+    @InjectModel('Node') private readonly nodeModel: Model<Node>
+  ) {}
 
   //создание узла первого типа
   async createChain(createNodeDto: NodeDto): Promise<Node> {

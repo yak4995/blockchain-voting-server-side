@@ -6,6 +6,7 @@ import { DatabaseModule } from '../database/database.module';
 import { CryptoController } from './crypto.controller';
 import { SignPacketDTO } from './dto/sign-packet.dto';
 import { VerifyPacketDTO } from './dto/verify-packet.dto';
+import { AppLogger } from '../logger/app-logger.service';
 
 const testMessage: string = '{name: \'Yurii\'}';
 const testMsgSign: string = 'e5015e62a9afe528bafaa54ddeaa9927065394f9d004eca54a45abfe50eb9f342abaca5a27e2ea896cbcbac508f53b216c6ad1207f918608540f424e1fed763bb94d64797a9146f66782e6539adcb735f35428f88c70d79417b27c7c0644692a5845676c70a4b09f0ec016bf6eb6fbd3de3263e1a129cc9c0b058da63abbadb41a0c564e3fa02fc290d78836132d97c41a90ad56800cf3c2827fe42418576a7ccf84b4c334beb1d52b63c6a4fef82926937a7aa3a244d42e8e26b893701a1fbfd61960c02bc720e3f9ed7003ac3fc6b194e1a2d5e1a6bde23a9ecbf4260de8d47317c69e1b7538ae6f779b4c4424c426e882e51910a8839ea175c85979af395f';
@@ -15,13 +16,17 @@ describe('CryptoController', () => {
   let cryptoController: CryptoController;
 
   beforeEach(async () => {
+    const mockAppLoggerProvider = {
+      provide: 'logger',
+      useFactory: async () => { return new AppLogger('logs', 'root.txt') }
+    };
     const module = await Test.createTestingModule({
       imports: [
         DatabaseModule,
         AuthModule
       ],
       controllers: [CryptoController],
-      providers: [RSAService, ...rsaProviders]
+      providers: [mockAppLoggerProvider, RSAService, ...rsaProviders]
   }).compile();
 
     cryptoController = module.get<CryptoController>(CryptoController);

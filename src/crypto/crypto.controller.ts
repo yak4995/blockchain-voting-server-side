@@ -3,18 +3,23 @@ import {
     Get, 
     UseGuards,
     Post,
-    Body
+    Body,
+    Inject
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RSAService } from './rsa.service';
 import { KeyPairDTO } from './dto/get-key-pair.dto';
 import { SignPacketDTO } from './dto/sign-packet.dto';
 import { VerifyPacketDTO } from './dto/verify-packet.dto';
+import { AppLogger } from '../logger/app-logger.service';
 
 @Controller('crypto')
 export class CryptoController {
 
-  constructor(private readonly RSAService: RSAService) {}
+  constructor(
+    private readonly RSAService: RSAService,
+    @Inject('logger') private readonly loggerService: AppLogger
+  ) {}
 
   //создаёт и сохраняет пару ключей, возвращая публичный ключ
   //(требует авторизации, потому что вызывается клиентом при создании выборов для генерирования ключа выборов)
@@ -39,7 +44,7 @@ export class CryptoController {
   async sign(@Body() signPacket: SignPacketDTO) {
 
     //TODO: валидация
-    return await this.RSAService.getMsgSignature(/*JSON.stringify(*/signPacket.message/*)*/, signPacket.privateKey);
+    return await this.RSAService.getMsgSignature(signPacket.message, signPacket.privateKey);
   }
 
   //endpoint-helper для верификации ЭЦП
@@ -47,6 +52,6 @@ export class CryptoController {
   async verify(@Body() verifyPacket: VerifyPacketDTO) {
 
     //TODO: валидация
-    return await this.RSAService.verifyMsgSignature(/*JSON.stringify(*/verifyPacket.message/*)*/, verifyPacket.signature, verifyPacket.publicKey);
+    return await this.RSAService.verifyMsgSignature(verifyPacket.message, verifyPacket.signature, verifyPacket.publicKey);
   }
 }

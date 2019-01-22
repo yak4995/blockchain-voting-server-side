@@ -4,9 +4,11 @@ import { RSAService } from './rsa.service';
 import { CryptoController } from './crypto.controller';
 import { rsaProviders } from './rsa.providers';
 import { DatabaseModule } from '../database/database.module';
+import { LoggerModule } from 'logger/app-logger.module';
 
 @Module({
     imports: [
+      LoggerModule.forRoot('crypto.txt'),
       /*
         Этот модуль использует метод MongooseModule.forFeature (),
         чтобы определить, какие модели должны быть зарегистрированы в текущем модуле.

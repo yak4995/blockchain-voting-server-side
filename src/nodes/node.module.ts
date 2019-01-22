@@ -5,9 +5,11 @@ import { NodeController } from './node.controller';
 import { NodeService } from './node.service';
 import { AuthModule } from 'auth/auth.module';
 import { ConfigModule } from 'config/config.module';
+import { LoggerModule } from 'logger/app-logger.module';
 
 @Module({
   imports: [
+    LoggerModule.forRoot('node.txt'),
     /*
       Этот модуль использует метод MongooseModule.forFeature (),
       чтобы определить, какие модели должны быть зарегистрированы в текущем модуле.

@@ -9,7 +9,9 @@ export class RSAService {
 
     private RSAKey: NodeRSA;
 
-    constructor(@Inject('KeyPairModelToken') private readonly keyPairModel: Model<KeyPair>) {
+    constructor(
+        @Inject('KeyPairModelToken') private readonly keyPairModel: Model<KeyPair>
+    ) {
         this.RSAKey = new NodeRSA();
     }
 
