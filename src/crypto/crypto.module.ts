@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from 'auth/auth.module';
+import { AuthModule } from '../auth/auth.module';
 import { RSAService } from './rsa.service';
 import { CryptoController } from './crypto.controller';
 import { rsaProviders } from './rsa.providers';
 import { DatabaseModule } from '../database/database.module';
-import { LoggerModule } from 'logger/app-logger.module';
+import { LoggerModule } from '../logger/app-logger.module';
 
 @Module({
     imports: [
@@ -23,6 +23,7 @@ import { LoggerModule } from 'logger/app-logger.module';
     providers: [
       RSAService, 
       ...rsaProviders //динамический сервис для иньекции по ключу KeyPairModelToken (то есть создания mongoose-модели для KeyPair)
-    ]
+    ],
+    exports: [RSAService]
 })
 export class CryptoModule {}

@@ -1,3 +1,5 @@
+.vscode/
 logs/
 node_modules/
 development.env
+admin-key.txt

@@ -10,10 +10,11 @@ import { CryptoModule } from './crypto/crypto.module';
 import { LoggerModule } from './logger/app-logger.module';
 
 //TODO: модуль для работы с внешними endpoint-ами на основе axios
-//TODO: node controller закончить (осн. логика приложения) и написать тесты для него
+//TODO: node controller закончить (осн. логика приложения) и написать тесты для него, узел 3-ого типа через cron + cli
 //TODO: модуль для распостранения узлов по другим узлам (прелесть blockchain)
-//TODO: документация по API через Swagger (см. доки NestJS)
-//TODO: докер? jenkins? kubernetes? aws/DO?
+//TODO: убрать костыли для дебаггинга и тестов ConfigService, оптимизировать асинхронщину, другие виды тестов
+//TODO: документация по API через Swagger (см. доки NestJS), документация проекта
+//TODO: докер? jenkins?
 
 /*
   Файл test.env в корне предназначен как замена .env файла для тестов Jest
@@ -65,6 +66,7 @@ import { LoggerModule } from './logger/app-logger.module';
         //Результат этого callback-а пойдет как параметр forRootAsync, то есть MongooseModule.forRootAsync('uri')
         useFactory: async (configService: ConfigService) => ({ //аналог return {uri: configService.get('MONGODB_URI')};
           uri: configService.get('MONGODB_URI'),
+          useNewUrlParser: true
         }),
         //в useFactory нужно будет инжектить ConfigService
         inject: [ConfigService],

@@ -3,6 +3,7 @@ import { KeyPair } from './interfaces/key-pair.interface';
 import { Model } from 'mongoose';
 import { KeyPairDTO } from './dto/get-key-pair.dto';
 import * as NodeRSA from 'node-rsa';
+import { sha256 } from 'js-sha256';
 
 @Injectable()
 export class RSAService {
@@ -37,11 +38,31 @@ export class RSAService {
         return this.RSAKey.sign(payload, 'hex');
     }
 
+    async getObjSignature(payload: object, privateKey: string): Promise<string> {
+        this.RSAKey.importKey(privateKey, 'pkcs8-private-pem');
+        this.RSAKey.setOptions({signingScheme: 'pkcs1-sha256'});
+
+        return this.RSAKey.sign(payload, 'hex');
+    }
+
     async verifyMsgSignature(payload: string, signature: string, publicKey: string): Promise<boolean> {
 
         this.RSAKey.importKey(publicKey, 'pkcs8-public-pem');
         this.RSAKey.setOptions({signingScheme: 'pkcs1-sha256'});
         
         return this.RSAKey.verify(Buffer.from(payload), Buffer.from(signature, 'hex'), 'hex');
+    }
+
+    async getMsgHash(payload: string): Promise<string> {
+        return sha256(payload);
+    }
+
+    async getObjHash(payload: object): Promise<string> {
+        return sha256(JSON.stringify(payload));
+    }
+
+    async getPrivateKeyByPublic(publicKey: string): Promise<string> {
+        const privateKey: KeyPair[] = await this.keyPairModel.find({'publicKey': publicKey});
+        return privateKey.length > 0 ? privateKey[0].privateKey : '';
     }
 }

@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule } from '@nestjs/common';
 import { AppLogger } from './app-logger.service';
 import { ConfigModule } from '../config/config.module';
 import { ConfigService } from '../config/config.service';
