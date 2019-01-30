@@ -6,7 +6,7 @@ import { ConfigModule } from '../config/config.module';
 import { LoggerModule } from '../logger/app-logger.module';
 import { CryptoModule } from '../crypto/crypto.module';
 import { nodeProviders } from './node.providers';
-import { DatabaseModule } from 'database/database.module';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
   imports: [

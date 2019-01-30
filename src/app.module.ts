@@ -8,13 +8,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CryptoModule } from './crypto/crypto.module';
 import { LoggerModule } from './logger/app-logger.module';
-
-//TODO: модуль для работы с внешними endpoint-ами на основе axios
-//TODO: node controller закончить (осн. логика приложения) и написать тесты для него, узел 3-ого типа через cron + cli
-//TODO: модуль для распостранения узлов по другим узлам (прелесть blockchain)
-//TODO: убрать костыли для дебаггинга и тестов ConfigService, оптимизировать асинхронщину, другие виды тестов
-//TODO: документация по API через Swagger (см. доки NestJS), документация проекта
-//TODO: докер? jenkins?
+import { AxiosModule } from './axios/axios.module';
 
 /*
   Файл test.env в корне предназначен как замена .env файла для тестов Jest
@@ -72,7 +66,8 @@ import { LoggerModule } from './logger/app-logger.module';
         inject: [ConfigService],
       }),
       NodeModule,
-      CryptoModule
+      CryptoModule,
+      AxiosModule
   ],
   /*
     Сообщаем Nest-у, что такие провайдеры существуют, принадлежат этому модулю (вне модуля провайдеры существовать не могут)

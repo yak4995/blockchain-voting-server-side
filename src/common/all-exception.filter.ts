@@ -12,7 +12,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       .status(status)
       .json({
         statusCode: status,
-        message: exception.message.error,
+        message: exception.message.message + ': ' + exception.message.error,
         timestamp: new Date().toUTCString(),
         path: request.url,
     });

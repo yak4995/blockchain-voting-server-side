@@ -10,20 +10,21 @@ import { readFileSync } from 'fs';
 @Injectable()
 export class NodeService {
 
+  private readonly ERROR_TEXT = 'Incorrect chain head!';
+
   constructor(
     private readonly RSAService: RSAService,
     private readonly configService: ConfigService,
     @Inject('NodeModelToken') private readonly nodeModel: Model<Node>
   ) {}
 
-  //TODO: сделать валидацию средствами class-validator (изучить с кастомными валидаторами)
   private async validateChainHeadNode(createNodeDto: NodeDto): Promise<void> {
 
     const adminPublicKey: string = readFileSync(this.configService.get('ADMIN_PUBLIC_KEY_PATH'), 'utf8').replace(/\r\n/g, '\n');
 
     //является ли автор админом
     if (adminPublicKey !== createNodeDto.authorPublicKey) {
-      throw new BadRequestException('Incorrect chain head!', 'Incorrect authorPublicKey!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect authorPublicKey!');
     }
 
     //посмотреть корректность хеша (обьект со всеми полями за исключением hash и signature)
@@ -33,13 +34,13 @@ export class NodeService {
       .forEach(key => objectForCheck[key] = createNodeDto[key]);
     const neededHash = await this.RSAService.getMsgHash(JSON.stringify(objectForCheck));
     if (createNodeDto.hash !== neededHash) {
-      throw new BadRequestException('Incorrect chain head!', 'Incorrect hash!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect hash!');
     }
 
     //проверить, если блок с таким хешем в базе
     const existedBlocks: Node[] = await this.nodeModel.find({hash: createNodeDto.hash});
     if (existedBlocks.length > 0) {
-      throw new BadRequestException('Incorrect chain head!', 'Such node already exists!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Such node already exists!');
     }
 
     //type = 1
@@ -57,26 +58,26 @@ export class NodeService {
           createNodeDto.votingDescription === '' || 
           startTimeDt <= (new Date()) ||
           startTimeDt >= endTimeDt) {
-      throw new BadRequestException('Incorrect chain head!', 'Incorrect args!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect args!');
     }
 
     //votingPublicKey есть в базе со своим приватным собратом
     if( '' === await this.RSAService.getPrivateKeyByPublic(createNodeDto.votingPublicKey) ) {
-      throw new BadRequestException('Incorrect chain head!', 'Incorrect votingPublicKey!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect votingPublicKey!');
     }
     //подпись валидна
     if ( ! await this.RSAService.verifyMsgSignature(JSON.stringify(objectForCheck), createNodeDto.signature, createNodeDto.authorPublicKey)) {
-      throw new BadRequestException('Incorrect chain head!', 'Incorrect signature!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect signature!');
     }
 
     //candidates is not empty string[]
     if (0 === createNodeDto.candidates.length || createNodeDto.candidates.some((candidate) => ! isString(candidate))) {
-      throw new BadRequestException('Incorrect chain head!', 'Candidates are empty or incorrect!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Candidates are empty or incorrect!');
     }
 
     //registeredVoters is empty []
     if (0 !== createNodeDto.registeredVoters.length) {
-      throw new BadRequestException('Incorrect chain head!', 'Registered voters is not empty!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Registered voters is not empty!');
     }
   }
 
