@@ -44,40 +44,23 @@ export class NodeService {
     }
 
     //type = 1
-    //parentHash равен ''
-    //authorPublicKey и votingPublicKey != ''
-    //votingDescription != ''
     //startTime > NOW()
     //endTime > startTime
     const startTimeDt: Date = new Date(createNodeDto.startTime),
           endTimeDt: Date = new Date(createNodeDto.endTime);
     if (createNodeDto.type !== 1 ||
-          createNodeDto.parentHash !== '' || 
-          createNodeDto.authorPublicKey === '' || 
-          createNodeDto.votingPublicKey === '' || 
-          createNodeDto.votingDescription === '' || 
           startTimeDt <= (new Date()) ||
           startTimeDt >= endTimeDt) {
-      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect args!');
+      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect type or dates!');
     }
 
     //votingPublicKey есть в базе со своим приватным собратом
-    if( '' === await this.RSAService.getPrivateKeyByPublic(createNodeDto.votingPublicKey) ) {
+    if('' === await this.RSAService.getPrivateKeyByPublic(createNodeDto.votingPublicKey)) {
       throw new BadRequestException(this.ERROR_TEXT, 'Incorrect votingPublicKey!');
     }
     //подпись валидна
     if ( ! await this.RSAService.verifyMsgSignature(JSON.stringify(objectForCheck), createNodeDto.signature, createNodeDto.authorPublicKey)) {
       throw new BadRequestException(this.ERROR_TEXT, 'Incorrect signature!');
-    }
-
-    //candidates is not empty string[]
-    if (0 === createNodeDto.candidates.length || createNodeDto.candidates.some((candidate) => ! isString(candidate))) {
-      throw new BadRequestException(this.ERROR_TEXT, 'Candidates are empty or incorrect!');
-    }
-
-    //registeredVoters is empty []
-    if (0 !== createNodeDto.registeredVoters.length) {
-      throw new BadRequestException(this.ERROR_TEXT, 'Registered voters is not empty!');
     }
   }
 

@@ -17,7 +17,7 @@ export class ValidatorPipe implements PipeTransform<any> {
     const object = plainToClass(metatype, value);
     const errors = await validate(object);
     if (errors.length > 0) {
-      throw new BadRequestException(null, 'Validation of ' + metatype.name + ' failed');
+      throw new BadRequestException("DTO validation error", '' + errors[0]);
     }
     return value;
   }

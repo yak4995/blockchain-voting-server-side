@@ -40,7 +40,6 @@ import { AxiosModule } from './axios/axios.module';
 @Module({
   //Список импортированных модулей, которые экспортируют провайдеров, которые требуются в этом модуле
   imports: [
-      LoggerModule.forRoot('root.txt'),
       AuthModule,
       /*
         MongooseModule нужно заимпортить в AppModule обязательно (с методом forRoot и переданым ему url подключения к базе),
@@ -67,7 +66,8 @@ import { AxiosModule } from './axios/axios.module';
       }),
       NodeModule,
       CryptoModule,
-      AxiosModule
+      AxiosModule,
+      LoggerModule.forRoot('root.txt')
   ],
   /*
     Сообщаем Nest-у, что такие провайдеры существуют, принадлежат этому модулю (вне модуля провайдеры существовать не могут)
