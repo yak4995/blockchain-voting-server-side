@@ -11,6 +11,7 @@ import { AxiosService } from './axios.service';
     HttpModule
   ],
   controllers: [AxiosController],
-  providers: [AxiosService]
+  providers: [AxiosService],
+  exports: [AxiosService]
 })
 export class AxiosModule {}

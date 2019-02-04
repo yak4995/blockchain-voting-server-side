@@ -27,8 +27,69 @@ export class NodeController {
   //получение узла по переданному хешу
   @Get(':hash')
   async getNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+
     try {
       return await this.nodeService.findByHash(hash);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
+
+  //получение "родительского узла" по хешу прямого потомка
+  @Get('parent/:hash')
+  async getParentNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+
+    try {
+      return await this.nodeService.findParentByHash(hash);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
+
+  //получить все узлы (выборы) первого типа в системе
+  @Get()
+  async getAllChainHeads(): Promise<Node[]> {
+
+    try {
+      return await this.nodeService.getAllChainHeads();
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
+
+  //поиск головы цепочки по хешу узла, который в этой цепочке состоит
+  @Get('head-by-hash/:hash')
+  async getChainHeadBySomeChildHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+
+    try {
+      return await this.nodeService.findChainHeadByNodeHash(hash);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
+
+  //получение "прямых детей" узла
+  @Get('children/:hash')
+  async getChainChildren(@Param('hash', ParseStringPipe) hash: string): Promise<Node[]> {
+    
+    try {
+      return await this.nodeService.findNodeChildren(hash);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
+
+  //получить последний узел в цепочке, за исключением 4 типа
+  @Get('last/:hash')
+  async getLastChainNode(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+
+    try {
+      return await this.nodeService.getLastChainNode(hash);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -50,11 +111,18 @@ export class NodeController {
   }
 
   //создание узла второго типа
-  @Post('register-voter')
+  @Post('register-voter/:voterId/:accessToken')
   @UsePipes(ValidatorPipe)
-  async registerVoter(@Body() createNodeDto: NodeDto) {
-
-    return await this.nodeService.registerVoter(createNodeDto);
+  async registerVoter(@Body() createNodeDto: NodeDto,
+                      @Param('voterId') voterId: number,
+                      @Param('accessToken') accessToken: string) {
+    
+    try {
+      return await this.nodeService.registerVoter(createNodeDto, voterId, accessToken);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
   }
 
   //создание узла четвертого типа

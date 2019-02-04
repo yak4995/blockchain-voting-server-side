@@ -29,14 +29,15 @@ describe('AxiosController tests', () => {
         ],
         controllers: [AxiosController],
         providers: [mockAppLoggerProvider, AxiosService]
-      }).compile();
+    }).compile();
 
-      axiosController = module.get<AxiosController>(AxiosController);
+    axiosController = module.get<AxiosController>(AxiosController);
   });
 
   describe('oauthGetTokenTest', () => {
 
     it('should return an access token', async () => {
+      
       expect(await axiosController.oAuthGetToken(credentials))
         .toEqual(expect.stringMatching(/[A-Za-z0-9\-\._~\+\/]+=*/));
     });
@@ -45,6 +46,7 @@ describe('AxiosController tests', () => {
   describe('getUserIdTest', () => {
 
     it('should return a user id from client by its access token', async () => {
+
       const accessToken = await axiosController.oAuthGetToken(credentials);
       expect(await axiosController.getUserIdFromClient(accessToken)).toHaveProperty('id', 2);
     });

@@ -22,16 +22,16 @@ export class AxiosService {
 
     try {
         const response = await this.httpService.post(
-                    this.clientUrl + '/oauth/token',
-                    {
-                        grant_type: 'password',
-                        client_id: this.OAuthClientId,
-                        client_secret: this.OAuthClientSecret,
-                        username: axiosAuthDto.username,
-                        password: axiosAuthDto.password,
-                        scope: ''
-                    })
-                    .toPromise(),
+                this.clientUrl + '/oauth/token',
+                {
+                    grant_type: 'password',
+                    client_id: this.OAuthClientId,
+                    client_secret: this.OAuthClientSecret,
+                    username: axiosAuthDto.username,
+                    password: axiosAuthDto.password,
+                    scope: ''
+                })
+                .toPromise(),
               result = response.data;
         return jwt_decode<any>(await result.access_token).jti;
     } catch (e) {
@@ -39,21 +39,20 @@ export class AxiosService {
     }
   }
 
-  async getUserIdByAccessToken(accessToken: string) {
+  async getUserByAccessToken(accessToken: string) {
     try {
         const response = await this.httpService.get(
-                    this.clientUrl + '/api/user',
-                    {
-                        headers: {
-                            'Accept': 'application/json',
-                            'Authorization': `Bearer ${accessToken}`
-                        }
-                    })
-                    .toPromise(),
+                this.clientUrl + '/api/user',
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                })
+                .toPromise(),
               result = response.data;
         return await result;
     } catch (e) {
-        console.log(e);
         throw new BadRequestException(this.ERROR_TEXT, 'Incorrect access token: ' + e.message);
     }
   }

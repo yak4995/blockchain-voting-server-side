@@ -6,7 +6,7 @@ export class ConfigService {
 
   constructor(filePath: string) {
     //workaround for debugging
-    if (filePath === 'undefined.env') {
+    if ('undefined.env' === filePath) {
       filePath = 'development.env';
     }
     this.envConfig = dotenv.parse(fs.readFileSync(filePath));

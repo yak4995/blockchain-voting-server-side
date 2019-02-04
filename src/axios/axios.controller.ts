@@ -38,7 +38,7 @@ export class AxiosController {
   async getUserIdFromClient(@Param('accessToken') accessToken: string) {
 
     try {
-        return await this.axiosService.getUserIdByAccessToken(accessToken);
+        return await this.axiosService.getUserByAccessToken(accessToken);
     } catch (e) {
         this.loggerService.error(e.message.error, e.trace);
         throw e;

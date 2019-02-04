@@ -7,6 +7,7 @@ import { LoggerModule } from '../logger/app-logger.module';
 import { CryptoModule } from '../crypto/crypto.module';
 import { nodeProviders } from './node.providers';
 import { DatabaseModule } from '../database/database.module';
+import { AxiosModule } from '../axios/axios.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { DatabaseModule } from '../database/database.module';
     DatabaseModule,
     AuthModule,
     ConfigModule,
-    CryptoModule
+    CryptoModule,
+    AxiosModule
   ],
   controllers: [NodeController],
   providers: [NodeService, ...nodeProviders]
