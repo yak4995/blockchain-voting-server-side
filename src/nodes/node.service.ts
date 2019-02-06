@@ -76,17 +76,6 @@ export class NodeService {
     }
   }
 
-  private async validateVoter(voterId: number, accessToken: string): Promise<void> {
-
-    try {
-      const { id } = await this.axiosService.getUserByAccessToken(accessToken); //деструктуризация
-      if (id != voterId) //потому что id - это строка
-        throw new BadRequestException(this.ERROR_TEXT, 'This access token invalid for this user!');
-    } catch (e) {
-      throw e;
-    }
-  }
-
   private async validateRegisterVoterNode(createNodeDto: NodeDto, voterId: number): Promise<void> {
 
     //type = 2
@@ -123,18 +112,38 @@ export class NodeService {
     }
 
     //не регался ли уже этот пользователь на эти выборы
-    if (await this.registeredVoterModel.findOne({hash: chainHeadNode.hash, registeredVoterId: voterId}).exec()) {
+    if (await this.isRegisteredVoter(chainHeadNode.hash, voterId)) {
       throw new BadRequestException(this.ERROR_TEXT, 'This user has been registered in the voting already!');
     }
 
     //не регался ли еще этот admittedUserPublicKey
-    if (await this.isRegisteredVoter(createNodeDto.parentHash, createNodeDto.admittedUserPublicKey)) {
+    if (await this.isAdmittedVoter(createNodeDto.parentHash, createNodeDto.admittedUserPublicKey)) {
       throw new BadRequestException(this.ERROR_TEXT, 'This public key has been registered in the voting already!');
     }
   }
 
+  private async persistRegisteredVoter(votingHash: string, voterId: number): Promise<RegisteredVoter> {
+
+    return await (new this.registeredVoterModel({hash: votingHash, registeredVoterId: voterId})).save();
+  }
+
+  async validateVoter(voterId: number, accessToken: string): Promise<void> {
+
+    try {
+      const { id } = await this.axiosService.getUserByAccessToken(accessToken); //деструктуризация
+      if (id != voterId) //потому что id - это строка
+        throw new BadRequestException(this.ERROR_TEXT, 'This access token invalid for this user!');
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async isRegisteredVoter(hash: string, voterId: number): Promise<boolean> {
+    return await this.registeredVoterModel.findOne({hash: hash, registeredVoterId: voterId}).exec() !== null;
+  }
+
   //проверка, регистрировался ли такой публичный ключ на выборах
-  async isRegisteredVoter(someNodeHash: string, checkingPublicKey: string): Promise<boolean> {
+  async isAdmittedVoter(someNodeHash: string, checkingPublicKey: string): Promise<boolean> {
 
     try {
       let currentNode = await this.findByHash(someNodeHash);
@@ -148,11 +157,6 @@ export class NodeService {
     } catch (e) {
       throw e;
     }
-  }
-
-  private async persistRegisteredVoter(votingHash: string, voterId: number): Promise<RegisteredVoter> {
-
-    return await (new this.registeredVoterModel({hash: votingHash, registeredVoterId: voterId})).save();
   }
 
   //создание узла первого типа
@@ -208,7 +212,7 @@ export class NodeService {
   //получение всех выборов (узлов первого типа), пока без пагинации
   async getAllChainHeads(): Promise<Node[]> {
 
-    return await this.nodeModel.find({type: 2}).exec();
+    return await this.nodeModel.find({type: 1}).exec();
   }
 
   //поиск узла по хешу

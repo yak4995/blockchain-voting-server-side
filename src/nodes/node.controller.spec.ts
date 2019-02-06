@@ -58,7 +58,9 @@ const correctRegisterVotingNode: NodeDto = {
 
 describe('NodeController tests', () => {
 
-  let nodeController: NodeController;
+  let nodeController: NodeController,
+      axiosService: AxiosService,
+      nodeService: NodeService;
 
   beforeAll(async () => {
 
@@ -85,6 +87,8 @@ describe('NodeController tests', () => {
         ]
     }).compile();
 
+    axiosService = module.get<AxiosService>(AxiosService);
+    nodeService = module.get<NodeService>(NodeService);
     nodeController = module.get<NodeController>(NodeController);
   });
 
@@ -209,6 +213,39 @@ describe('NodeController tests', () => {
       }
     });
 
+    it('should throw Error about existing child', async () => {
+
+      jest.spyOn(nodeService, 'findNodeChildren').mockImplementationOnce((hash: string) => {
+        return ["someParentNode"];
+      });
+
+      try {
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+      } catch (e) {
+        expect(e.message.error).toMatch('Parent node already have children!');
+      }
+
+      jest.spyOn(nodeService, 'findNodeChildren').mockClear();
+    });
+
+    it('should throw Error about incorrect voting date', async () => {
+
+      jest.spyOn(nodeService, 'findChainHeadByNodeHash').mockImplementationOnce((hash: string) => {
+        let objectForCheck: any = {};
+        Object.keys(correctChainHead).forEach(key => objectForCheck[key] = objectForCheck[key]);
+        objectForCheck.startTime = 1348979200000;
+        return objectForCheck;
+      });
+
+      try {
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+      } catch (e) {
+        expect(e.message.error).toMatch('The voting already has been started!');
+      }
+
+      jest.spyOn(nodeService, 'findChainHeadByNodeHash').mockClear();
+    });
+    
     it('should throw Error about author key', async () => {
       
       let testRegisterVotingNode: NodeDto = Object.assign({}, correctRegisterVotingNode, {
@@ -220,6 +257,49 @@ describe('NodeController tests', () => {
       } catch (e) {
         expect(e.message.error).toMatch('You have to write voting public key in author field!');
       }
+    });
+
+    it('should throw Error about already registered user', async () => {
+
+      jest.spyOn(nodeService, 'isRegisteredVoter').mockImplementationOnce((hash: string, voterId: number) => true);
+
+      try {
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+      } catch (e) {
+        expect(e.message.error).toMatch('This user has been registered in the voting already!');
+      }
+
+      jest.spyOn(nodeService, 'isRegisteredVoter').mockClear();
+    });
+
+    it('should throw Error about already registered key', async () => {
+
+      jest.spyOn(nodeService, 'isAdmittedVoter').mockImplementationOnce((someNodeHash: string, checkingPublicKey: string) => true);
+
+      try {
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+      } catch (e) {
+        expect(e.message.error).toMatch('This public key has been registered in the voting already!');
+      }
+
+      jest.spyOn(nodeService, 'isAdmittedVoter').mockClear();
+    });
+
+    it('should throw Error about non-admitted user', async () => {
+
+      jest.spyOn(axiosService, 'getUserByAccessToken').mockImplementationOnce((accessToken: string) => {
+        return {id: 5};
+      });
+      jest.spyOn(nodeService, 'validateVoter').mockImplementationOnce((voterId: number, accessToken: string) => {});
+
+      try {
+        await nodeController.registerVoter(correctRegisterVotingNode, 5, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+      } catch (e) {
+        expect(e.message.error).toMatch('This user isn`t admitted voter of the voting!');
+      }
+
+      jest.spyOn(nodeService, 'validateVoter').mockClear();
+      jest.spyOn(axiosService, 'getUserByAccessToken').mockClear();
     });
 
     afterAll(async () => {
