@@ -9,7 +9,7 @@ import { nodeProviders } from './node.providers';
 import { RSAService } from '../crypto/rsa.service';
 import { rsaProviders } from '../crypto/rsa.providers';
 import { NodeDto } from './dto/create-node.dto';
-import { HttpModule, HttpService } from '@nestjs/common';
+import { HttpModule, HttpService, NotFoundException } from '@nestjs/common';
 import { AxiosService } from '../axios/axios.service';
 import { ConfigService } from '../config/config.service';
 
@@ -176,14 +176,19 @@ describe('NodeController tests', () => {
 
     beforeAll(async () => {
       await nodeController.createChain(correctChainHead);
+      jest.spyOn(axiosService, 'getUserByAccessToken').mockImplementation((accessToken: string) => {
+        if(accessToken === 'fake')
+          throw new NotFoundException(null, 'Request failed with status code 404');
+        return accessToken === 'access-token-for-5-id' ? {id: 5} : {id: 2};
+      });
     });
 
     it('validate voter test. Should throw Error about incorrect accessToken', async () => {
 
       try {
-        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9');
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, 'fake');
       } catch (e) {
-        expect(e.message.error).toMatch('Incorrect access token: Request failed with status code 404');
+        expect(e.message.error).toMatch('Request failed with status code 404');
       }
     });
 
@@ -194,7 +199,7 @@ describe('NodeController tests', () => {
       });
 
       try {
-        await nodeController.registerVoter(testRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+        await nodeController.registerVoter(testRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('Incorrect type!');
       }
@@ -207,7 +212,7 @@ describe('NodeController tests', () => {
       });
 
       try {
-        await nodeController.registerVoter(testRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+        await nodeController.registerVoter(testRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('Node with specified parent hash doesn`t exist!');
       }
@@ -220,7 +225,7 @@ describe('NodeController tests', () => {
       });
 
       try {
-        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('Parent node already have children!');
       }
@@ -238,7 +243,7 @@ describe('NodeController tests', () => {
       });
 
       try {
-        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('The voting already has been started!');
       }
@@ -253,7 +258,7 @@ describe('NodeController tests', () => {
       });
 
       try {
-        await nodeController.registerVoter(testRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+        await nodeController.registerVoter(testRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('You have to write voting public key in author field!');
       }
@@ -264,7 +269,7 @@ describe('NodeController tests', () => {
       jest.spyOn(nodeService, 'isRegisteredVoter').mockImplementationOnce((hash: string, voterId: number) => true);
 
       try {
-        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('This user has been registered in the voting already!');
       }
@@ -277,7 +282,7 @@ describe('NodeController tests', () => {
       jest.spyOn(nodeService, 'isAdmittedVoter').mockImplementationOnce((someNodeHash: string, checkingPublicKey: string) => true);
 
       try {
-        await nodeController.registerVoter(correctRegisterVotingNode, 2, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+        await nodeController.registerVoter(correctRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('This public key has been registered in the voting already!');
       }
@@ -286,24 +291,21 @@ describe('NodeController tests', () => {
     });
 
     it('should throw Error about non-admitted user', async () => {
-
-      jest.spyOn(axiosService, 'getUserByAccessToken').mockImplementationOnce((accessToken: string) => {
-        return {id: 5};
-      });
+      
       jest.spyOn(nodeService, 'validateVoter').mockImplementationOnce((voterId: number, accessToken: string) => {});
 
       try {
-        await nodeController.registerVoter(correctRegisterVotingNode, 5, '2b9aec1eb12a43ae9c1a351e3dfc479ec2c00984cee49e5ddee067822ed29d01705651656a9d4b9c');
+        await nodeController.registerVoter(correctRegisterVotingNode, 5, 'access-token-for-5-id');
       } catch (e) {
         expect(e.message.error).toMatch('This user isn`t admitted voter of the voting!');
       }
 
       jest.spyOn(nodeService, 'validateVoter').mockClear();
-      jest.spyOn(axiosService, 'getUserByAccessToken').mockClear();
     });
 
     afterAll(async () => {
       await nodeController.deleteChain(correctChainHead.hash);
+      jest.spyOn(axiosService, 'getUserByAccessToken').mockClear();
     });
   });
 });
