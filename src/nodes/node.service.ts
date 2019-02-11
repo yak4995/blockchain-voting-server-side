@@ -31,6 +31,9 @@ export class NodeService {
     return objectForCheck;
   }
 
+  //Validation:
+
+  //валидация узла первого типа:
   private async validateChainHeadNode(createNodeDto: NodeDto): Promise<void> {
 
     const adminPublicKey: string = readFileSync(this.configService.get('ADMIN_PUBLIC_KEY_PATH'), 'utf8').replace(/\r\n/g, '\n');
@@ -76,6 +79,7 @@ export class NodeService {
     }
   }
 
+  //валидация узла второго типа:
   private async validateRegisterVoterNode(createNodeDto: NodeDto, voterId: number): Promise<void> {
 
     //type = 2
@@ -122,11 +126,7 @@ export class NodeService {
     }
   }
 
-  private async persistRegisteredVoter(votingHash: string, voterId: number): Promise<RegisteredVoter> {
-
-    return await (new this.registeredVoterModel({hash: votingHash, registeredVoterId: voterId})).save();
-  }
-
+  //валидация желающего зарегистрироваться избирателя через аутентификацию на клиенте:
   async validateVoter(voterId: number, accessToken: string): Promise<void> {
 
     try {
@@ -136,10 +136,6 @@ export class NodeService {
     } catch (e) {
       throw e;
     }
-  }
-
-  async isRegisteredVoter(hash: string, voterId: number): Promise<boolean> {
-    return await this.registeredVoterModel.findOne({hash: hash, registeredVoterId: voterId}).exec() !== null;
   }
 
   //проверка, регистрировался ли такой публичный ключ на выборах
@@ -158,6 +154,22 @@ export class NodeService {
       throw e;
     }
   }
+
+  //RegisteredVotersService:
+
+  //проверка, зарегестрирован ли избиратель на выборах по их узлу первого типа и ид юзера-избирателя
+  async isRegisteredVoter(hash: string, voterId: number): Promise<boolean> {
+
+    return await this.registeredVoterModel.findOne({hash: hash, registeredVoterId: voterId}).exec() !== null;
+  }
+
+  //сохранение зарегистрированого пользователя в базе
+  private async persistRegisteredVoter(votingHash: string, voterId: number): Promise<RegisteredVoter> {
+
+    return await (new this.registeredVoterModel({hash: votingHash, registeredVoterId: voterId})).save();
+  }
+
+  //Persistantion:
 
   //создание узла первого типа
   async createChain(createNodeDto: NodeDto): Promise<Node> {
@@ -203,11 +215,19 @@ export class NodeService {
     }
   }
 
+  //создание узла третьего типа (через CLI)
+  async startVoting(createNodeDto: NodeDto): Promise<Node> {
+
+    return await (new this.nodeModel(createNodeDto)).save();
+  }
+
   //создание узла четвертого типа
   async registerVote(createNodeDto: NodeDto): Promise<Node> {
 
     return await (new this.nodeModel(createNodeDto)).save();
   }
+
+  //Reading:
 
   //получение всех выборов (узлов первого типа), пока без пагинации
   async getAllChainHeads(): Promise<Node[]> {
@@ -278,7 +298,34 @@ export class NodeService {
     }
   }
 
-  //исключительно для теста
+  //получение выборов, для которые уже начались, но еще не закончились
+  async getAllChainHeadsInCurrentBoundaries(): Promise<Node[]> {
+
+    const now: Date = new Date();
+    //$gte - greater than or equal
+    //$lt - less than
+    return await this.nodeModel.find({type: 1, startTime: { $lt: now }, endTime: { $gte: now }}).exec();
+  }
+
+  //получение пользователей, зарегистрировавшихся на выборы с указанным хешем
+  async getRegisteredVotersByVotingHash(votingHash: string): Promise<number[]> {
+
+    let result: number[] =[];
+    (await this.registeredVoterModel.find({hash: votingHash}).exec())
+    .forEach((currentVoter: RegisteredVoter) => {
+      result.push(currentVoter.registeredVoterId);
+    });
+    return result;
+  }
+
+  //удаление учета зарегистрироваавшихся избирателей для сохранения анонимности после начала выборов
+  async purgeRegisteredVotersInfoByVotingHash(votingHash: string): Promise<void> {
+    
+    await this.registeredVoterModel.deleteMany({hash: votingHash}).exec();
+  }
+
+  //TODO: убрать при рефакторинге, в тестах использовать мокинг
+  //исключительно для тестов, метод удаления узла первого типа
   async deleteChainByHash(hash: string): Promise<boolean> {
 
     return await this.nodeModel.deleteOne({hash: hash});

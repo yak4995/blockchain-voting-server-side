@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "webpack": "webpack --config webpack.config.js"
+    "webpack": "webpack --config webpack.config.js",
+    "start:voting-check": "ts-node -r tsconfig-paths/register src/voting-check-job.ts"
   },
   "dependencies": {
     "@nestjs/common": "^5.6.2",
