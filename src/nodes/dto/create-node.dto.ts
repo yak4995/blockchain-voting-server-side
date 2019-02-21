@@ -28,27 +28,27 @@ export class NodeDto {
     @Max(5)
     readonly type: number;
 
-    @ValidateIf(o => 1 === o.type || 3 === o.type)
+    @ValidateIf(o => [1, 3].includes(o.type))
     @IsString()
     @IsNotEmpty()
     readonly votingDescription: string;
 
-    @ValidateIf(o => 1 === o.type || 3 === o.type)
+    @ValidateIf(o => [1, 3].includes(o.type))
     @IsInt()
     @Min(0)
     readonly startTime: number;
 
-    @ValidateIf(o => 1 === o.type || 3 === o.type)
+    @ValidateIf(o => [1, 3].includes(o.type))
     @IsInt()
     @Min(0)
     readonly endTime: number;
 
-    @ValidateIf(o => 1 === o.type || 3 === o.type)
+    @ValidateIf(o => [1, 3].includes(o.type))
     @IsArray()
     @ArrayNotEmpty()
     readonly candidates: string[];
 
-    @ValidateIf(o => 1 === o.type || 3 === o.type)
+    @ValidateIf(o => [1, 3].includes(o.type))
     @IsArray()
     @ArrayNotEmpty()
     readonly admittedVoters: number[];

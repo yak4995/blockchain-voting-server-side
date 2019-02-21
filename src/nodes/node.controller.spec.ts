@@ -9,7 +9,7 @@ import { nodeProviders } from './node.providers';
 import { RSAService } from '../crypto/rsa.service';
 import { rsaProviders } from '../crypto/rsa.providers';
 import { NodeDto } from './dto/create-node.dto';
-import { HttpModule, HttpService, NotFoundException } from '@nestjs/common';
+import { HttpModule, HttpService, NotFoundException, BadRequestException } from '@nestjs/common';
 import { AxiosService } from '../axios/axios.service';
 import { ConfigService } from '../config/config.service';
 
@@ -54,12 +54,30 @@ const correctRegisterVotingNode: NodeDto = {
   votingPublicKey: "",
   admittedUserPublicKey: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgXS312Dk1daptRM0iH/J\n5sAfW2KdrJBzAhaHmwFVZj9YLQ3d6YYZqSReZNrShDsuhwh0TQT8HRDR44odIICo\nhmtC9OLKRFS6uwuxgxWqYA6/k7ktegRxjqVOWIonNrEQk2fMUxdRn2mYXZqdv5Nh\nRE7WQ1DnWS/A+7nxb7mDye27o7oGzSOqolObQcIGXmOoNCm5SRZPsPL6VEx1Vo64\nl14Xny4AJVNQaR10Eo6IhaeiY7Xt9x8ljFN7DXLrW7qBarhgQBSMh82hCLUZQoOj\nwxvJJbwieHBxOnvAypsPUD1T7+NYFHq/l5DzCrDBc9anJuknRCl8z6/0ZTDlZYyi\nhwIDAQAB\n-----END PUBLIC KEY-----",
   selectedVariant: ""
-}; 
+};
+
+const correctVote: NodeDto = {
+  hash: "",
+  parentHash: "test",
+  authorPublicKey: "test",
+  signature: "",
+  type: 4,
+  votingDescription: "",
+  startTime: 0,
+  endTime: 0,
+  candidates: [],
+  admittedVoters: [],
+  registeredVoters: [],
+  votingPublicKey: "",
+  admittedUserPublicKey: "",
+  selectedVariant: "test"
+};
 
 describe('NodeController tests', () => {
 
   let nodeController: NodeController,
       axiosService: AxiosService,
+      rsaService: RSAService,
       nodeService: NodeService;
 
   beforeAll(async () => {
@@ -89,6 +107,7 @@ describe('NodeController tests', () => {
 
     axiosService = module.get<AxiosService>(AxiosService);
     nodeService = module.get<NodeService>(NodeService);
+    rsaService = module.get<RSAService>(RSAService);
     nodeController = module.get<NodeController>(NodeController);
   });
 
@@ -175,6 +194,7 @@ describe('NodeController tests', () => {
   describe('Registering new voter test', () => {
 
     beforeAll(async () => {
+
       await nodeController.createChain(correctChainHead);
       jest.spyOn(axiosService, 'getUserByAccessToken').mockImplementation((accessToken: string) => {
         if(accessToken === 'fake')
@@ -304,8 +324,143 @@ describe('NodeController tests', () => {
     });
 
     afterAll(async () => {
+
       await nodeController.deleteChain(correctChainHead.hash);
       jest.spyOn(axiosService, 'getUserByAccessToken').mockClear();
+    });
+  });
+
+  describe('voteTest', () => {
+
+    beforeAll(async () => {
+
+      //мокаем getMsgHash и verifyMsgSignature, findByHash
+      jest.spyOn(rsaService, 'getMsgHash').mockImplementation((payload: string) => {
+        return "";
+      });
+      jest.spyOn(rsaService, 'verifyMsgSignature').mockImplementation((payload: string, signature: string, publicKey: string) => {
+        return true;
+      });
+      jest.spyOn(nodeService, 'findByHash').mockImplementation((hash: string) => {
+
+        switch (hash) {
+          case 'fake':
+            throw new BadRequestException('Incorrect hash!', 'Current node with specified hash does not exist!');
+          case 'vote':
+            return {type: 4};
+          case 'incorrect-type':
+            return {type: 1};
+          case 'outdated':
+            return {type: 3, startTime: (+ new Date()) + 10000};
+          case 'incorrect-candidate':
+            return {type: 3, startTime: (+ new Date()) - 10000, endTime: (+ new Date()) + 10000, candidates: ["somewho else"]};
+          default:
+            return {type: 3, startTime: (+ new Date()) - 10000, endTime: (+ new Date()) + 10000, candidates: ["test"]};
+        }
+      });
+    });
+
+    it('should throw Error about absent parent node', async () => {
+
+      let testVote: NodeDto = Object.assign({}, correctVote, {
+        parentHash: 'fake'
+      });
+      try {
+        await nodeController.registerVote(testVote);
+      } catch (e) {
+        expect(e.message.error).toMatch('Current node with specified hash does not exist!');
+      }
+    });
+
+    it('should throw Error about not last vote as parent', async () => {
+
+      jest.spyOn(nodeService, 'getFirstVoteByStartNodeHash').mockImplementationOnce((hash: string) => {
+        return {type: 4};
+      });
+
+      try {
+        await nodeController.registerVote(correctVote);
+      } catch (e) {
+        expect(e.message.error).toMatch('Start voting node already have votes with this author key! You must note your last vote as parent node');
+      }
+
+      jest.spyOn(nodeService, 'getFirstVoteByStartNodeHash').mockClear();
+    });
+
+    it('should throw Error about second primary vote', async () => {
+
+      jest.spyOn(nodeService, 'findNodeChildren').mockImplementationOnce((hash: string) => {
+        return [{type: 4}];
+      });
+
+      let testVote: NodeDto = Object.assign({}, correctVote, {
+        parentHash: 'vote'
+      });
+      try {
+        await nodeController.registerVote(testVote);
+      } catch (e) {
+        expect(e.message.error).toMatch('Parent node already have children!');
+      }
+
+      jest.spyOn(nodeService, 'findNodeChildren').mockClear();
+    });
+
+    it('should throw Error about incorrect type of parent node', async () => {
+
+      let testVote: NodeDto = Object.assign({}, correctVote, {
+        parentHash: 'incorrect-type'
+      });
+      try {
+        await nodeController.registerVote(testVote);
+      } catch (e) {
+        expect(e.message.error).toMatch('Parent node must have type 3 or 4!');
+      }
+    });
+
+    it('should throw Error about outdated voting', async () => {
+
+      let testVote: NodeDto = Object.assign({}, correctVote, {
+        parentHash: 'outdated'
+      });
+      try {
+        await nodeController.registerVote(testVote);
+      } catch (e) {
+        expect(e.message.error).toMatch('Voting have not started or already have finished!');
+      }
+    });
+
+    it('should throw Error about incorrect candidate', async () => {
+
+      let testVote: NodeDto = Object.assign({}, correctVote, {
+        parentHash: 'incorrect-candidate'
+      });
+      try {
+        await nodeController.registerVote(testVote);
+      } catch (e) {
+        expect(e.message.error).toMatch('Selected candidate doesn`t exist!');
+      }
+    });
+
+    it('should throw Error about not registered voter', async () => {
+
+      jest.spyOn(nodeService, 'isAdmittedVoter').mockImplementationOnce((someNodeHash: string, checkingPublicKey: string) => {
+        return false;
+      });
+
+      try {
+        await nodeController.registerVote(correctVote);
+      } catch (e) {
+        expect(e.message.error).toMatch('Your are not registered voter!');
+      }
+
+      jest.spyOn(nodeService, 'isAdmittedVoter').mockClear();
+    });
+
+    afterAll(async () => {
+
+      jest.spyOn(rsaService, 'getMsgHash').mockClear();
+      jest.spyOn(rsaService, 'verifyMsgSignature').mockClear();
+      jest.spyOn(nodeService, 'findByHash').mockClear();
     });
   });
 });

@@ -96,11 +96,22 @@ export class NodeController {
     }
   }
 
+  @Get('get-last-vote/:hash')
+  async getLastVote(@Param('hash', ParseStringPipe) voteNodeHash: string): Promise<Node> {
+
+    try {
+      return await this.nodeService.getLastVote(voteNodeHash);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
+
   //создание узла первого типа (требует авторизации, потому что регистрируют выборы только с узла-клиента)
   @Post('create-chain')
   @UseGuards(JwtAuthGuard) //AuthGuard так как мы не передали ему стратегию, использует её по умолч. (для OAuth2 пришлось бы передать 'bearer')
   @UsePipes(ValidatorPipe)
-  async createChain(@Body() createNodeDto: NodeDto) {
+  async createChain(@Body() createNodeDto: NodeDto): Promise<Node> {
 
     try {
       return await this.nodeService.createChain(createNodeDto);
@@ -115,7 +126,7 @@ export class NodeController {
   @UsePipes(ValidatorPipe)
   async registerVoter(@Body() createNodeDto: NodeDto,
                       @Param('voterId') voterId: number,
-                      @Param('accessToken') accessToken: string) {
+                      @Param('accessToken') accessToken: string): Promise<Node> {
     
     try {
       return await this.nodeService.registerVoter(createNodeDto, voterId, accessToken);
@@ -128,13 +139,18 @@ export class NodeController {
   //создание узла четвертого типа
   @Post('vote')
   @UsePipes(ValidatorPipe)
-  async registerVote(@Body() createNodeDto: NodeDto) {
+  async registerVote(@Body() createNodeDto: NodeDto): Promise<Node> {
 
-    return await this.nodeService.registerVote(createNodeDto);
+    try {
+      return await this.nodeService.registerVote(createNodeDto);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
   }
 
   //исключительно для тестов
-  async deleteChain(hash: string) {
+  async deleteChain(hash: string): Promise<boolean> {
 
     return await this.nodeService.deleteChainByHash(hash);
   }
