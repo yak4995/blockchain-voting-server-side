@@ -14,6 +14,7 @@ export class LoggerModule {
     };
     return {
       module: LoggerModule,
+      imports: [ConfigModule],
       providers: [AppLoggerProvider],
       exports: [AppLoggerProvider]
     };
