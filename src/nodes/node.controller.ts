@@ -8,19 +8,21 @@ import {
     Inject,
     Param
 } from '@nestjs/common';
-import { NodeService } from './node.service';
 import { Node } from './interfaces/node.interface';
 import { NodeDto } from './dto/create-node.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AppLogger } from '../logger/app-logger.service';
 import { ValidatorPipe } from '../common/validator.pipe';
 import { ParseStringPipe } from '../common/parse-string.pipe';
+import { NodeReadService } from './services/node-read.service';
+import { NodePersistanceService } from './services/node-persistance.service';
 
 @Controller('nodes')
 export class NodeController {
 
   constructor(
-    private readonly nodeService: NodeService,
+    private readonly nodeReadService: NodeReadService,
+    private readonly nodePersistanceService: NodePersistanceService,
     @Inject('logger') private readonly loggerService: AppLogger
   ) {}
 
@@ -29,7 +31,7 @@ export class NodeController {
   async getNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
 
     try {
-      return await this.nodeService.findByHash(hash);
+      return await this.nodeReadService.findByHash(hash);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -41,7 +43,7 @@ export class NodeController {
   async getParentNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
 
     try {
-      return await this.nodeService.findParentByHash(hash);
+      return await this.nodeReadService.findParentByHash(hash);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -53,7 +55,7 @@ export class NodeController {
   async getAllChainHeads(): Promise<Node[]> {
 
     try {
-      return await this.nodeService.getAllChainHeads();
+      return await this.nodeReadService.getAllChainHeads();
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -65,7 +67,7 @@ export class NodeController {
   async getChainHeadBySomeChildHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
 
     try {
-      return await this.nodeService.findChainHeadByNodeHash(hash);
+      return await this.nodeReadService.findChainHeadByNodeHash(hash);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -77,7 +79,7 @@ export class NodeController {
   async getChainChildren(@Param('hash', ParseStringPipe) hash: string): Promise<Node[]> {
     
     try {
-      return await this.nodeService.findNodeChildren(hash);
+      return await this.nodeReadService.findNodeChildren(hash);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -89,7 +91,7 @@ export class NodeController {
   async getLastChainNode(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
 
     try {
-      return await this.nodeService.getLastChainNode(hash);
+      return await this.nodeReadService.getLastChainNode(hash);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -100,7 +102,7 @@ export class NodeController {
   async getLastVote(@Param('hash', ParseStringPipe) voteNodeHash: string): Promise<Node> {
 
     try {
-      return await this.nodeService.getLastVote(voteNodeHash);
+      return await this.nodeReadService.getLastVote(voteNodeHash);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -114,7 +116,7 @@ export class NodeController {
   async createChain(@Body() createNodeDto: NodeDto): Promise<Node> {
 
     try {
-      return await this.nodeService.createChain(createNodeDto);
+      return await this.nodePersistanceService.createChain(createNodeDto);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -129,7 +131,7 @@ export class NodeController {
                       @Param('accessToken') accessToken: string): Promise<Node> {
     
     try {
-      return await this.nodeService.registerVoter(createNodeDto, voterId, accessToken);
+      return await this.nodePersistanceService.registerVoter(createNodeDto, voterId, accessToken);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -142,16 +144,10 @@ export class NodeController {
   async registerVote(@Body() createNodeDto: NodeDto): Promise<Node> {
 
     try {
-      return await this.nodeService.registerVote(createNodeDto);
+      return await this.nodePersistanceService.registerVote(createNodeDto);
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
     }
-  }
-
-  //исключительно для тестов
-  async deleteChain(hash: string): Promise<boolean> {
-
-    return await this.nodeService.deleteChainByHash(hash);
   }
 }

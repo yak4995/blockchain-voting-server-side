@@ -2,7 +2,9 @@ import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/co
 
 @Catch(HttpException)
 export class AllExceptionsFilter implements ExceptionFilter {
-  catch(exception: any, host: ArgumentsHost) {
+
+  catch(exception: HttpException, host: ArgumentsHost) {
+    
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const request = ctx.getRequest();
@@ -15,6 +17,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message: exception.message.message + ': ' + exception.message.error,
         timestamp: new Date().toUTCString(),
         path: request.url,
+        trace: exception.stack
     });
   }
 }

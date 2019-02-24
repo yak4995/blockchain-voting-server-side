@@ -1,17 +1,20 @@
 import { Test } from '@nestjs/testing';
+import { HttpModule, HttpService, NotFoundException, BadRequestException } from '@nestjs/common';
 import { AppLogger } from '../logger/app-logger.service';
 import { DatabaseModule } from '../database/database.module';
 import { AuthModule } from '../auth/auth.module';
 import { ConfigModule } from '../config/config.module';
 import { NodeController } from './node.controller';
-import { NodeService } from './node.service';
 import { nodeProviders } from './node.providers';
 import { RSAService } from '../crypto/rsa.service';
 import { rsaProviders } from '../crypto/rsa.providers';
 import { NodeDto } from './dto/create-node.dto';
-import { HttpModule, HttpService, NotFoundException, BadRequestException } from '@nestjs/common';
 import { AxiosService } from '../axios/axios.service';
 import { ConfigService } from '../config/config.service';
+import { NodeReadService } from './services/node-read.service';
+import { NodePersistanceService } from './services/node-persistance.service';
+import { RegisteredVotersService } from './services/registered-voters.service';
+import { NodeValidationService } from './services/node-validation.service';
 
 //votingPublicKey - первый в парах в базе
 const correctChainHead: NodeDto = {
@@ -78,7 +81,9 @@ describe('NodeController tests', () => {
   let nodeController: NodeController,
       axiosService: AxiosService,
       rsaService: RSAService,
-      nodeService: NodeService;
+      nodeReadService: NodeReadService,
+      nodeValidationService: NodeValidationService,
+      registeredVotersService: RegisteredVotersService;
 
   beforeAll(async () => {
 
@@ -97,7 +102,10 @@ describe('NodeController tests', () => {
         controllers: [NodeController],
         providers: [
           mockAppLoggerProvider,
-          NodeService,
+          NodeReadService,
+          NodeValidationService,
+          NodePersistanceService,
+          RegisteredVotersService,
           ...nodeProviders,
           RSAService,
           ...rsaProviders,
@@ -106,7 +114,9 @@ describe('NodeController tests', () => {
     }).compile();
 
     axiosService = module.get<AxiosService>(AxiosService);
-    nodeService = module.get<NodeService>(NodeService);
+    nodeReadService = module.get<NodeReadService>(NodeReadService);
+    nodeValidationService = module.get<NodeValidationService>(NodeValidationService);
+    registeredVotersService = module.get<RegisteredVotersService>(RegisteredVotersService);
     rsaService = module.get<RSAService>(RSAService);
     nodeController = module.get<NodeController>(NodeController);
   });
@@ -115,7 +125,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about incorrect authorPublicKey', async () => {
       
-      let testChainHead: NodeDto = Object.assign({}, correctChainHead, {authorPublicKey: "-----BEGINPUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA57PbiWYcl0r71IxPgrZM\nleAWZfN3WGfeyIs+Q9xBwsY0v6toeAvk7gjsiyD/FE/fCS9UhHQ7kWaHF/p8bsGi\ndMzaHa3qh358PEdrjcSMAJYLp0ZCUBND5VZWCUxSXBqYcfHdn2Zin9qTd7L7wymB\ntB2DGAVv1TV31h+0VyPH3dhPn5zaZJLkAl+b/QuD8YezXnVFxqmkOy/GmOJJxRWC\n3vbpeaQioS8idXrzSHXvOtmomDYtPWuS2igIMNValGc/6gVNbexvXm1lJJ1ugVs4\nDYgJSQ1Yf1jK5rpjwYp4MasqeycaisUaa1c8VJVWCLPf9pBttb+g8K8b2dCaJZ45\n1wIDAQAB\n-----END PUBLIC KEY-----"});
+      let testChainHead: NodeDto = Object.assign({}, correctChainHead, {authorPublicKey: "Some incorrect key"});
       //вот так в JEST ловятся reject-ы async-функций
       try {
         await nodeController.createChain(testChainHead);
@@ -126,24 +136,32 @@ describe('NodeController tests', () => {
 
     it('should throw Error about incorrect hash', async () => {
 
-      let testChainHead: NodeDto = Object.assign({}, correctChainHead, {hash: "B71e160660dbd02a2da33bcc3a6cb95b2056fb5588901b130dfb87e55c26f46e"});
+      jest.spyOn(rsaService, 'getMsgHash').mockImplementationOnce((payload: string) => {
+        return "incorrect hash";
+      });
+
       try {
-        await nodeController.createChain(testChainHead);
+        await nodeController.createChain(correctChainHead);
       } catch (e) {
         expect(e.message.error).toMatch('Incorrect hash!');
       }
+
+      jest.spyOn(rsaService, 'getMsgHash').mockClear();
     });
 
     it('should throw Error about existing node in DB', async () => {
 
-      //вначале пишем корректную ноду (это и будет в тч и тест), потом пробуем записать её во второй раз, потом удаляем ноду
-      await nodeController.createChain(correctChainHead);
+      jest.spyOn(nodeReadService, 'findByHash').mockImplementationOnce((hash: string) => {
+        return {};
+      });
+
       try {
         await nodeController.createChain(correctChainHead);
       } catch (e) {
         expect(e.message.error).toMatch('Such node already exists!');
       }
-      await nodeController.deleteChain(correctChainHead.hash);
+
+      jest.spyOn(nodeReadService, 'findByHash').mockClear();
     });
 
     it('should throw Error about incorrect dates', async () => {
@@ -154,7 +172,6 @@ describe('NodeController tests', () => {
         startTime: 1348979200000,
         endTime: 1449238400000
       });
-
       try {
         await nodeController.createChain(testChainHead);
       } catch (e) {
@@ -164,30 +181,32 @@ describe('NodeController tests', () => {
 
     it('should throw Error about incorrect votingPublicKey', async () => {
 
-      let testChainHead: NodeDto = Object.assign({}, correctChainHead, {
-        hash: "f31143a4e914b2e5da359b8fbbc4d4c923b467cdd50c969ba16a05a6c8d01f2a",
-        signature: "323d119b1870a2b2347055ca6713cf6e859d0250f3f3d71d3b606026c8272b7414f96368fc55bede3d216b1bfb4cfa2c45ed4323dd43f8b430a99499a0d110108e10f39a44fd75277e8bb616dba35a0bbdf612a2694dbb72915e2b32a7513a113e90bd3d0b053d7c8335e88be24fdf032d947178fe61475eed360aa01c90426e2a116163d6eaa4fda28faa696517d0b90ad508a69f10ad97765a900d05a9af4323bc2e4debb20c5d2282cda9156eb7a31ce3b1ae33b651c3aa2cbed6dc6e39d81b3cb3b749d1907882be527fb4cce7071c1d9013afe6a08d750fa85d1c44f4d30407c785c60ad456c06ca1d3e98a898eba8456f637f119e41f5066f3c62c3326",
-        votingPublicKey: "-----BEGINPUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnDzVXypOUQRF/IwE9I+a\nXtkcNek4GUxeuw5az6aKt810MW6Lvi0AhZxCqWSstx52VJPpBuvhDMLoyLhiRZVt\n/Ua/JB1QcQN/4FTI5cymq3jMyRVqJqCHDmwAkPCI20tSnWiNY5mc/zgUq80yvUKS\n4LPQ21Squok5cvzS2vmfnZGJmABt3cvlNtMXCvsnFQDkIsxrA2mQyIQXet8J13Tr\npVMaYo6nZY39pQA+tQWqWjykK9Pao7WPjMmAUnN4e+q7hc2qZEOPFacVR6lK53Zp\nFMkjHMuSw545mT4AOZ3wL67SMG4mgPGClcLxQiEeaIqV+Ak/Yoo86dPZRTXy7mao\nYQIDAQAB\n-----END PUBLIC KEY-----"
+      jest.spyOn(rsaService, 'getPrivateKeyByPublic').mockImplementationOnce((publicKey: string) => {
+        return '';
       });
 
       try {
-        await nodeController.createChain(testChainHead);
+        await nodeController.createChain(correctChainHead);
       } catch (e) {
         expect(e.message.error).toMatch('Incorrect votingPublicKey!');
       }
+
+      jest.spyOn(rsaService, 'getPrivateKeyByPublic').mockClear();
     });
 
     it('should throw Error about incorrect signature', async () => {
 
-      let testChainHead: NodeDto = Object.assign({}, correctChainHead, {
-        signature: "09bc556b192e0e1b1fa9825ffa499eb13875aaba00968286c00ad923411fe54054a95109f631bbce6d2ebfe8fa726daf4d4872733ea316f352ee4334fec571498bef90f2460d5ae7a17254423bdd610fea951ae7b6ef1abfee50ea8e03519475f4cecdf04f2f92f829670e0645e0e4b06fad1ec4b564bf613f099f9cb97417dff4cca6cd2111048827e3460f98cf1420ae1ce76b6422d44d0996b71af118895f06089f3fcf4bbe00e7f64e0850dddfffbc2bc85121ce0de04bbe7e45df52ef065467b734fc27db7d3791973cd64d76a3c02377a9bd7e8683bd242d7f13f7eefe15da8431e9de6337b7ab36d1e0947473f23425cd54ea8ffd9c19a198f824c114"
+      jest.spyOn(rsaService, 'verifyMsgSignature').mockImplementationOnce((payload: string, signature: string, publicKey: string) => {
+        return false;
       });
 
       try {
-        await nodeController.createChain(testChainHead);
+        await nodeController.createChain(correctChainHead);
       } catch (e) {
         expect(e.message.error).toMatch('Incorrect signature!');
       }
+
+      jest.spyOn(rsaService, 'verifyMsgSignature').mockClear();
     });
   });
 
@@ -195,7 +214,13 @@ describe('NodeController tests', () => {
 
     beforeAll(async () => {
 
-      await nodeController.createChain(correctChainHead);
+      jest.spyOn(nodeReadService, 'findByHash').mockImplementation((hash: string) => {
+        if (hash === 'incorrect') {
+          throw new BadRequestException('Incorrect hash!', 'Current node with specified hash does not exist!');
+        } else {
+          return {};
+        }
+      });
       jest.spyOn(axiosService, 'getUserByAccessToken').mockImplementation((accessToken: string) => {
         if(accessToken === 'fake')
           throw new NotFoundException(null, 'Request failed with status code 404');
@@ -217,7 +242,6 @@ describe('NodeController tests', () => {
       let testRegisterVotingNode: NodeDto = Object.assign({}, correctRegisterVotingNode, {
         type: 3
       });
-
       try {
         await nodeController.registerVoter(testRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
@@ -228,9 +252,8 @@ describe('NodeController tests', () => {
     it('should throw Error about non-existing parent node', async () => {
 
       let testRegisterVotingNode: NodeDto = Object.assign({}, correctRegisterVotingNode, {
-        parentHash: "a657f12ff38fb472b426ad5fd8471e70276293fab77603ef044177742a226ba4"
+        parentHash: "incorrect"
       });
-
       try {
         await nodeController.registerVoter(testRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
@@ -240,7 +263,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about existing child', async () => {
 
-      jest.spyOn(nodeService, 'findNodeChildren').mockImplementationOnce((hash: string) => {
+      jest.spyOn(nodeReadService, 'findNodeChildren').mockImplementationOnce((hash: string) => {
         return ["someParentNode"];
       });
 
@@ -250,12 +273,12 @@ describe('NodeController tests', () => {
         expect(e.message.error).toMatch('Parent node already have children!');
       }
 
-      jest.spyOn(nodeService, 'findNodeChildren').mockClear();
+      jest.spyOn(nodeReadService, 'findNodeChildren').mockClear();
     });
 
     it('should throw Error about incorrect voting date', async () => {
 
-      jest.spyOn(nodeService, 'findChainHeadByNodeHash').mockImplementationOnce((hash: string) => {
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce((hash: string) => {
         let objectForCheck: any = {};
         Object.keys(correctChainHead).forEach(key => objectForCheck[key] = objectForCheck[key]);
         objectForCheck.startTime = 1348979200000;
@@ -268,38 +291,62 @@ describe('NodeController tests', () => {
         expect(e.message.error).toMatch('The voting already has been started!');
       }
 
-      jest.spyOn(nodeService, 'findChainHeadByNodeHash').mockClear();
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockClear();
     });
     
     it('should throw Error about author key', async () => {
       
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce((hash: string) => {
+        return {
+          votingPublicKey: "another fake",
+          startTime: new Date().valueOf() + 10000,
+          admittedVoters: [2]
+        };
+      });
+
       let testRegisterVotingNode: NodeDto = Object.assign({}, correctRegisterVotingNode, {
         authorPublicKey: "fake"
       });
-
       try {
         await nodeController.registerVoter(testRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('You have to write voting public key in author field!');
       }
+
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockClear();
     });
 
     it('should throw Error about already registered user', async () => {
 
-      jest.spyOn(nodeService, 'isRegisteredVoter').mockImplementationOnce((hash: string, voterId: number) => true);
-
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce((hash: string) => {
+        return {
+          votingPublicKey: correctRegisterVotingNode.authorPublicKey,
+          startTime: new Date().valueOf() + 10000,
+          admittedVoters: [2]
+        };
+      });
+      jest.spyOn(registeredVotersService, 'isRegisteredVoter').mockImplementationOnce((hash: string, voterId: number) => true);
+      
       try {
         await nodeController.registerVoter(correctRegisterVotingNode, 2, 'qwerty');
       } catch (e) {
         expect(e.message.error).toMatch('This user has been registered in the voting already!');
       }
 
-      jest.spyOn(nodeService, 'isRegisteredVoter').mockClear();
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockClear();
+      jest.spyOn(registeredVotersService, 'isRegisteredVoter').mockClear();
     });
 
     it('should throw Error about already registered key', async () => {
 
-      jest.spyOn(nodeService, 'isAdmittedVoter').mockImplementationOnce((someNodeHash: string, checkingPublicKey: string) => true);
+      jest.spyOn(nodeValidationService, 'isAdmittedVoter').mockImplementationOnce((someNodeHash: string, checkingPublicKey: string) => true);
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce((hash: string) => {
+        return {
+          votingPublicKey: correctRegisterVotingNode.authorPublicKey,
+          startTime: new Date().valueOf() + 10000,
+          admittedVoters: [2]
+        };
+      });
 
       try {
         await nodeController.registerVoter(correctRegisterVotingNode, 2, 'qwerty');
@@ -307,12 +354,20 @@ describe('NodeController tests', () => {
         expect(e.message.error).toMatch('This public key has been registered in the voting already!');
       }
 
-      jest.spyOn(nodeService, 'isAdmittedVoter').mockClear();
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockClear();
+      jest.spyOn(nodeValidationService, 'isAdmittedVoter').mockClear();
     });
 
     it('should throw Error about non-admitted user', async () => {
       
-      jest.spyOn(nodeService, 'validateVoter').mockImplementationOnce((voterId: number, accessToken: string) => {});
+      jest.spyOn(nodeValidationService, 'validateVoter').mockImplementationOnce((voterId: number, accessToken: string) => {});
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce((hash: string) => {
+        return {
+          votingPublicKey: correctRegisterVotingNode.authorPublicKey,
+          startTime: new Date().valueOf() + 10000,
+          admittedVoters: [2]
+        };
+      });
 
       try {
         await nodeController.registerVoter(correctRegisterVotingNode, 5, 'access-token-for-5-id');
@@ -320,12 +375,13 @@ describe('NodeController tests', () => {
         expect(e.message.error).toMatch('This user isn`t admitted voter of the voting!');
       }
 
-      jest.spyOn(nodeService, 'validateVoter').mockClear();
+      jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockClear();
+      jest.spyOn(nodeValidationService, 'validateVoter').mockClear();
     });
 
     afterAll(async () => {
 
-      await nodeController.deleteChain(correctChainHead.hash);
+      jest.spyOn(nodeReadService, 'findByHash').mockClear();
       jest.spyOn(axiosService, 'getUserByAccessToken').mockClear();
     });
   });
@@ -341,7 +397,7 @@ describe('NodeController tests', () => {
       jest.spyOn(rsaService, 'verifyMsgSignature').mockImplementation((payload: string, signature: string, publicKey: string) => {
         return true;
       });
-      jest.spyOn(nodeService, 'findByHash').mockImplementation((hash: string) => {
+      jest.spyOn(nodeReadService, 'findByHash').mockImplementation((hash: string) => {
 
         switch (hash) {
           case 'fake':
@@ -374,7 +430,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about not last vote as parent', async () => {
 
-      jest.spyOn(nodeService, 'getFirstVoteByStartNodeHash').mockImplementationOnce((hash: string) => {
+      jest.spyOn(nodeReadService, 'getFirstVoteByStartNodeHash').mockImplementationOnce((hash: string) => {
         return {type: 4};
       });
 
@@ -384,12 +440,12 @@ describe('NodeController tests', () => {
         expect(e.message.error).toMatch('Start voting node already have votes with this author key! You must note your last vote as parent node');
       }
 
-      jest.spyOn(nodeService, 'getFirstVoteByStartNodeHash').mockClear();
+      jest.spyOn(nodeReadService, 'getFirstVoteByStartNodeHash').mockClear();
     });
 
     it('should throw Error about second primary vote', async () => {
 
-      jest.spyOn(nodeService, 'findNodeChildren').mockImplementationOnce((hash: string) => {
+      jest.spyOn(nodeReadService, 'findNodeChildren').mockImplementationOnce((hash: string) => {
         return [{type: 4}];
       });
 
@@ -402,7 +458,7 @@ describe('NodeController tests', () => {
         expect(e.message.error).toMatch('Parent node already have children!');
       }
 
-      jest.spyOn(nodeService, 'findNodeChildren').mockClear();
+      jest.spyOn(nodeReadService, 'findNodeChildren').mockClear();
     });
 
     it('should throw Error about incorrect type of parent node', async () => {
@@ -443,7 +499,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about not registered voter', async () => {
 
-      jest.spyOn(nodeService, 'isAdmittedVoter').mockImplementationOnce((someNodeHash: string, checkingPublicKey: string) => {
+      jest.spyOn(nodeValidationService, 'isAdmittedVoter').mockImplementationOnce((someNodeHash: string, checkingPublicKey: string) => {
         return false;
       });
 
@@ -453,14 +509,14 @@ describe('NodeController tests', () => {
         expect(e.message.error).toMatch('Your are not registered voter!');
       }
 
-      jest.spyOn(nodeService, 'isAdmittedVoter').mockClear();
+      jest.spyOn(nodeValidationService, 'isAdmittedVoter').mockClear();
     });
 
     afterAll(async () => {
 
       jest.spyOn(rsaService, 'getMsgHash').mockClear();
       jest.spyOn(rsaService, 'verifyMsgSignature').mockClear();
-      jest.spyOn(nodeService, 'findByHash').mockClear();
+      jest.spyOn(nodeReadService, 'findByHash').mockClear();
     });
   });
 });

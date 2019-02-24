@@ -1,29 +1,33 @@
 import { NestFactory } from "@nestjs/core";
 import { INestApplicationContext } from "@nestjs/common";
 import { AppModule } from './app.module';
-import { NodeService } from './nodes/node.service';
 import { Node } from "./nodes/interfaces/node.interface";
-import { NodeDto } from "nodes/dto/create-node.dto";
-import { RSAService } from "crypto/rsa.service";
+import { NodeDto } from "./nodes/dto/create-node.dto";
+import { RSAService } from "./crypto/rsa.service";
+import { NodeReadService } from "./nodes/services/node-read.service";
+import { NodePersistanceService } from "./nodes/services/node-persistance.service";
+import { RegisteredVotersService } from "./nodes/services/registered-voters.service";
 
 async function bootstrap() {
 
     const app: INestApplicationContext = await NestFactory.createApplicationContext(AppModule);
-    const nodeService: NodeService = app.get<NodeService>(NodeService);
+    const nodeReadService: NodeReadService = app.get<NodeReadService>(NodeReadService);
+    const nodePersistanceService: NodePersistanceService = app.get<NodePersistanceService>(NodePersistanceService);
+    const registeredVotersService: RegisteredVotersService = app.get<RegisteredVotersService>(RegisteredVotersService);
     const rsaService: RSAService = app.get<RSAService>(RSAService);
-    const actualVotings: Node[] = await nodeService.getAllChainHeadsInCurrentBoundaries();
+    const actualVotings: Node[] = await nodeReadService.getAllChainHeadsInCurrentBoundaries();
 
     console.log('We got ' + actualVotings.length + ' actual votings.');
     actualVotings.forEach(async (currentChainHead: Node, currentIndex: number) => {
 
-        const lastChainNode: Node = await nodeService.getLastChainNode(currentChainHead.hash);
+        const lastChainNode: Node = await nodeReadService.getLastChainNode(currentChainHead.hash);
 
         if(lastChainNode.type === 2) {
 
             console.log('Processing ' + currentChainHead);
 
-            const registeredVoters: number[] = await nodeService.getRegisteredVotersByVotingHash(currentChainHead.hash);
-            nodeService.purgeRegisteredVotersInfoByVotingHash(currentChainHead.hash);
+            const registeredVoters: number[] = await registeredVotersService.getRegisteredVotersByVotingHash(currentChainHead.hash);
+            registeredVotersService.purgeRegisteredVotersInfoByVotingHash(currentChainHead.hash);
 
             //TODO: убрать эту копипасту
             const startNodeObj = {
@@ -57,7 +61,7 @@ async function bootstrap() {
                 admittedUserPublicKey: startNodeObj.admittedUserPublicKey,
                 selectedVariant: startNodeObj.selectedVariant
             };
-            nodeService.startVoting(startNode);
+            nodePersistanceService.startVoting(startNode);
         } else {
             console.log('This voting already have started');
         }
