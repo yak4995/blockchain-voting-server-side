@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { KeyPair } from './interfaces/key-pair.interface';
 import { Model } from 'mongoose';
 import { KeyPairDTO } from './dto/get-key-pair.dto';
-import NodeRSA from 'node-rsa';
+import * as NodeRSA from 'node-rsa';
 import { sha256 } from 'js-sha256';
 
 @Injectable()

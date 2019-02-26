@@ -140,7 +140,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about existing node in DB', async () => {
       jest.spyOn(nodeReadService, 'findByHash').mockImplementationOnce(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           return {};
         },
       );
@@ -201,7 +201,7 @@ describe('NodeController tests', () => {
   describe('Registering new voter test', () => {
     beforeAll(async () => {
       jest.spyOn(nodeReadService, 'findByHash').mockImplementation(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           if (hash === 'incorrect') {
             throw new BadRequestException('Incorrect hash!', 'Current node with specified hash does not exist!');
           } else {
@@ -247,7 +247,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about existing child', async () => {
       jest.spyOn(nodeReadService, 'findNodeChildren').mockImplementationOnce(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           return ['someParentNode'];
         },
       );
@@ -280,7 +280,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about author key', async () => {
       jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           return {
             votingPublicKey: 'another fake',
             startTime: new Date().valueOf() + 10000,
@@ -303,7 +303,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about already registered user', async () => {
       jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           return {
             votingPublicKey: correctRegisterVotingNode.authorPublicKey,
             startTime: new Date().valueOf() + 10000,
@@ -326,7 +326,7 @@ describe('NodeController tests', () => {
     it('should throw Error about already registered key', async () => {
       jest.spyOn(nodeValidationService, 'isAdmittedVoter').mockImplementationOnce(async (someNodeHash: string, checkingPublicKey: string) => true);
       jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           return {
             votingPublicKey: correctRegisterVotingNode.authorPublicKey,
             startTime: new Date().valueOf() + 10000,
@@ -348,7 +348,7 @@ describe('NodeController tests', () => {
     it('should throw Error about non-admitted user', async () => {
       jest.spyOn(nodeValidationService, 'validateVoter').mockImplementationOnce(async (voterId: number, accessToken: string) => {});
       jest.spyOn(nodeReadService, 'findChainHeadByNodeHash').mockImplementationOnce(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           return {
             votingPublicKey: correctRegisterVotingNode.authorPublicKey,
             startTime: new Date().valueOf() + 10000,
@@ -383,7 +383,7 @@ describe('NodeController tests', () => {
         return true;
       });
       jest.spyOn(nodeReadService, 'findByHash').mockImplementation(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           switch (hash) {
             case 'fake':
               throw new BadRequestException('Incorrect hash!', 'Current node with specified hash does not exist!');
@@ -415,7 +415,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about not last vote as parent', async () => {
       jest.spyOn(nodeReadService, 'getFirstVoteByStartNodeHash').mockImplementationOnce(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           return { type: 4 };
         },
       );
@@ -431,7 +431,7 @@ describe('NodeController tests', () => {
 
     it('should throw Error about second primary vote', async () => {
       jest.spyOn(nodeReadService, 'findNodeChildren').mockImplementationOnce(
-        async (hash: string): Promise<any> => {
+        (hash: string): any => {
           return [{ type: 4 }];
         },
       );
