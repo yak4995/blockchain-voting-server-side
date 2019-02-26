@@ -1,13 +1,4 @@
-import { 
-    Controller, 
-    Get, 
-    UseGuards, 
-    Post, 
-    Body,
-    UsePipes,
-    Inject,
-    Param
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Post, Body, UsePipes, Inject, Param } from '@nestjs/common';
 import { Node } from './interfaces/node.interface';
 import { NodeDto } from './dto/create-node.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,17 +10,15 @@ import { NodePersistanceService } from './services/node-persistance.service';
 
 @Controller('nodes')
 export class NodeController {
-
   constructor(
     private readonly nodeReadService: NodeReadService,
     private readonly nodePersistanceService: NodePersistanceService,
-    @Inject('logger') private readonly loggerService: AppLogger
+    @Inject('logger') private readonly loggerService: AppLogger,
   ) {}
 
-  //получение узла по переданному хешу
+  // получение узла по переданному хешу
   @Get(':hash')
   async getNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
-
     try {
       return await this.nodeReadService.findByHash(hash);
     } catch (e) {
@@ -38,10 +27,9 @@ export class NodeController {
     }
   }
 
-  //получение "родительского узла" по хешу прямого потомка
+  // получение "родительского узла" по хешу прямого потомка
   @Get('parent/:hash')
   async getParentNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
-
     try {
       return await this.nodeReadService.findParentByHash(hash);
     } catch (e) {
@@ -50,10 +38,9 @@ export class NodeController {
     }
   }
 
-  //получить все узлы (выборы) первого типа в системе
+  // получить все узлы (выборы) первого типа в системе
   @Get()
   async getAllChainHeads(): Promise<Node[]> {
-
     try {
       return await this.nodeReadService.getAllChainHeads();
     } catch (e) {
@@ -62,10 +49,9 @@ export class NodeController {
     }
   }
 
-  //поиск головы цепочки по хешу узла, который в этой цепочке состоит
+  // поиск головы цепочки по хешу узла, который в этой цепочке состоит
   @Get('head-by-hash/:hash')
   async getChainHeadBySomeChildHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
-
     try {
       return await this.nodeReadService.findChainHeadByNodeHash(hash);
     } catch (e) {
@@ -74,10 +60,9 @@ export class NodeController {
     }
   }
 
-  //получение "прямых детей" узла
+  // получение "прямых детей" узла
   @Get('children/:hash')
   async getChainChildren(@Param('hash', ParseStringPipe) hash: string): Promise<Node[]> {
-    
     try {
       return await this.nodeReadService.findNodeChildren(hash);
     } catch (e) {
@@ -86,10 +71,9 @@ export class NodeController {
     }
   }
 
-  //получить последний узел в цепочке, за исключением 4 типа
+  // получить последний узел в цепочке, за исключением 4 типа
   @Get('last/:hash')
   async getLastChainNode(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
-
     try {
       return await this.nodeReadService.getLastChainNode(hash);
     } catch (e) {
@@ -100,7 +84,6 @@ export class NodeController {
 
   @Get('get-last-vote/:hash')
   async getLastVote(@Param('hash', ParseStringPipe) voteNodeHash: string): Promise<Node> {
-
     try {
       return await this.nodeReadService.getLastVote(voteNodeHash);
     } catch (e) {
@@ -109,12 +92,11 @@ export class NodeController {
     }
   }
 
-  //создание узла первого типа (требует авторизации, потому что регистрируют выборы только с узла-клиента)
+  // создание узла первого типа (требует авторизации, потому что регистрируют выборы только с узла-клиента)
   @Post('create-chain')
-  @UseGuards(JwtAuthGuard) //AuthGuard так как мы не передали ему стратегию, использует её по умолч. (для OAuth2 пришлось бы передать 'bearer')
+  @UseGuards(JwtAuthGuard) // AuthGuard так как мы не передали ему стратегию, использует её по умолч. (для OAuth2 пришлось бы передать 'bearer')
   @UsePipes(ValidatorPipe)
   async createChain(@Body() createNodeDto: NodeDto): Promise<Node> {
-
     try {
       return await this.nodePersistanceService.createChain(createNodeDto);
     } catch (e) {
@@ -123,13 +105,10 @@ export class NodeController {
     }
   }
 
-  //создание узла второго типа
+  // создание узла второго типа
   @Post('register-voter/:voterId/:accessToken')
   @UsePipes(ValidatorPipe)
-  async registerVoter(@Body() createNodeDto: NodeDto,
-                      @Param('voterId') voterId: number,
-                      @Param('accessToken') accessToken: string): Promise<Node> {
-    
+  async registerVoter(@Body() createNodeDto: NodeDto, @Param('voterId') voterId: number, @Param('accessToken') accessToken: string): Promise<Node> {
     try {
       return await this.nodePersistanceService.registerVoter(createNodeDto, voterId, accessToken);
     } catch (e) {
@@ -138,11 +117,10 @@ export class NodeController {
     }
   }
 
-  //создание узла четвертого типа
+  // создание узла четвертого типа
   @Post('vote')
   @UsePipes(ValidatorPipe)
   async registerVote(@Body() createNodeDto: NodeDto): Promise<Node> {
-
     try {
       return await this.nodePersistanceService.registerVote(createNodeDto);
     } catch (e) {

@@ -1,13 +1,12 @@
-import { IsString } from "class-validator";
+import { IsString } from 'class-validator';
 
 export class VerifyPacketDTO {
+  @IsString()
+  readonly message: string;
 
-    @IsString()
-    readonly message: string;
+  @IsString()
+  readonly signature: string;
 
-    @IsString()
-    readonly signature: string;
-
-    @IsString()
-    readonly publicKey: string;
+  @IsString()
+  readonly publicKey: string;
 }

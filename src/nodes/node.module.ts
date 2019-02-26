@@ -21,20 +21,14 @@ import { RegisteredVotersService } from './services/registered-voters.service';
       Благодаря этому мы можем внедрить Mongoose-модель для Node в NodeService с помощью декоратора @InjectModel
       по ключу 'Node'
     */
-    //MongooseModule.forFeature([{ name: 'Node', schema: NodeSchema }]),
+    // MongooseModule.forFeature([{ name: 'Node', schema: NodeSchema }]),
     DatabaseModule,
     AuthModule,
     ConfigModule,
     CryptoModule,
-    AxiosModule
+    AxiosModule,
   ],
   controllers: [NodeController],
-  providers: [
-    NodeValidationService,
-    NodeReadService,
-    NodePersistanceService,
-    RegisteredVotersService,
-    ...nodeProviders
-  ]
+  providers: [NodeValidationService, NodeReadService, NodePersistanceService, RegisteredVotersService, ...nodeProviders],
 })
 export class NodeModule {}

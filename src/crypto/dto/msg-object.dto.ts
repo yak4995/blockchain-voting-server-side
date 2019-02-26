@@ -1,3 +1,3 @@
 export class MsgObjDTO {
-    readonly msg: object;
+  readonly msg: object;
 }

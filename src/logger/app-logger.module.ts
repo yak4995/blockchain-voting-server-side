@@ -5,18 +5,20 @@ import { ConfigService } from '../config/config.service';
 
 export class LoggerModule {
   static forRoot(logFileName: string): DynamicModule {
-    //динамический провайдер по ключу logger
+    // динамический провайдер по ключу logger
     const AppLoggerProvider = {
       imports: [ConfigModule],
       provide: 'logger',
-      useFactory: async (configService: ConfigService) => { return new AppLogger(configService.get('LOGS_PATH'), logFileName) },
-      inject: [ConfigService]
+      useFactory: async (configService: ConfigService) => {
+        return new AppLogger(configService.get('LOGS_PATH'), logFileName);
+      },
+      inject: [ConfigService],
     };
     return {
       module: LoggerModule,
       imports: [ConfigModule],
       providers: [AppLoggerProvider],
-      exports: [AppLoggerProvider]
+      exports: [AppLoggerProvider],
     };
   }
 }

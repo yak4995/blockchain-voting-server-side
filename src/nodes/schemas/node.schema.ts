@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 
-//Схема хранимого в коллекции MongoDB обьекта
+// Схема хранимого в коллекции MongoDB обьекта
 export const NodeSchema = new mongoose.Schema({
   hash: String,
   parentHash: String,
@@ -15,5 +15,5 @@ export const NodeSchema = new mongoose.Schema({
   registeredVoters: Array,
   votingPublicKey: String,
   admittedUserPublicKey: String,
-  selectedVariant: String
+  selectedVariant: String,
 });

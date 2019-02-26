@@ -7,8 +7,7 @@ import { ConfigService } from '../config/config.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-
-  //обязателен и для OAuth2 стратегии и для JWT-стратегии
+  // обязателен и для OAuth2 стратегии и для JWT-стратегии
   constructor(private readonly authService: AuthService, private readonly configeService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -16,10 +15,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  //обязателен и для OAuth2 стратегии (но со строковым аргументом token вместо payload) и для JWT-стратегии
-  //JwtStrategy использует AuthService для валидации декодированной полезной нагрузки
-  //возвращает обьект, представляющий пользователя, которому принадлежал переданный токен
-  async validate(payload: JwtPayload) {
+  // обязателен и для OAuth2 стратегии (но со строковым аргументом token вместо payload) и для JWT-стратегии
+  // JwtStrategy использует AuthService для валидации декодированной полезной нагрузки
+  // возвращает обьект, представляющий пользователя, которому принадлежал переданный токен
+  async validate(payload: JwtPayload): Promise<{ name: string }> {
     const user = await this.authService.validateUser(payload);
     if (!user) {
       throw new UnauthorizedException();

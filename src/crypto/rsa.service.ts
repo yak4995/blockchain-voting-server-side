@@ -2,67 +2,60 @@ import { Injectable, Inject } from '@nestjs/common';
 import { KeyPair } from './interfaces/key-pair.interface';
 import { Model } from 'mongoose';
 import { KeyPairDTO } from './dto/get-key-pair.dto';
-import * as NodeRSA from 'node-rsa';
+import NodeRSA from 'node-rsa';
 import { sha256 } from 'js-sha256';
 
 @Injectable()
 export class RSAService {
+  private RSAKey: NodeRSA;
 
-    private RSAKey: NodeRSA;
+  constructor(@Inject('KeyPairModelToken') private readonly keyPairModel: Model<KeyPair>) {
+    this.RSAKey = new NodeRSA();
+  }
 
-    constructor(
-        @Inject('KeyPairModelToken') private readonly keyPairModel: Model<KeyPair>
-    ) {
-        this.RSAKey = new NodeRSA();
-    }
+  async generateKeyPair(): Promise<KeyPairDTO> {
+    const RSAKeyGenerator = new NodeRSA().generateKeyPair();
+    return {
+      publicKey: RSAKeyGenerator.exportKey('pkcs8-public-pem'),
+      privateKey: RSAKeyGenerator.exportKey('pkcs8-private-pem'),
+    };
+  }
 
-    async generateKeyPair(): Promise<KeyPairDTO> {
-        
-        const RSAKeyGenerator = (new NodeRSA()).generateKeyPair();
-        return {
-            publicKey: RSAKeyGenerator.exportKey('pkcs8-public-pem'),
-            privateKey: RSAKeyGenerator.exportKey('pkcs8-private-pem')
-        };
-    }
+  async saveKeyPair(keyPair: KeyPairDTO) {
+    return new this.keyPairModel(keyPair).save();
+  }
 
-    async saveKeyPair(keyPair: KeyPairDTO)  {
+  async getMsgSignature(payload: string, privateKey: string): Promise<string> {
+    this.RSAKey.importKey(privateKey, 'pkcs8-private-pem');
+    this.RSAKey.setOptions({ signingScheme: 'pkcs1-sha256' });
 
-        return new this.keyPairModel(keyPair).save();
-    }
+    return this.RSAKey.sign(payload, 'hex');
+  }
 
-    async getMsgSignature(payload: string, privateKey: string): Promise<string> {
+  async getObjSignature(payload: object, privateKey: string): Promise<string> {
+    this.RSAKey.importKey(privateKey, 'pkcs8-private-pem');
+    this.RSAKey.setOptions({ signingScheme: 'pkcs1-sha256' });
 
-        this.RSAKey.importKey(privateKey, 'pkcs8-private-pem');
-        this.RSAKey.setOptions({signingScheme: 'pkcs1-sha256'});
+    return this.RSAKey.sign(payload, 'hex');
+  }
 
-        return this.RSAKey.sign(payload, 'hex');
-    }
+  async verifyMsgSignature(payload: string, signature: string, publicKey: string): Promise<boolean> {
+    this.RSAKey.importKey(publicKey, 'pkcs8-public-pem');
+    this.RSAKey.setOptions({ signingScheme: 'pkcs1-sha256' });
 
-    async getObjSignature(payload: object, privateKey: string): Promise<string> {
-        this.RSAKey.importKey(privateKey, 'pkcs8-private-pem');
-        this.RSAKey.setOptions({signingScheme: 'pkcs1-sha256'});
+    return this.RSAKey.verify(Buffer.from(payload), Buffer.from(signature, 'hex'), 'hex');
+  }
 
-        return this.RSAKey.sign(payload, 'hex');
-    }
+  async getMsgHash(payload: string): Promise<string> {
+    return sha256(payload);
+  }
 
-    async verifyMsgSignature(payload: string, signature: string, publicKey: string): Promise<boolean> {
+  async getObjHash(payload: object): Promise<string> {
+    return sha256(JSON.stringify(payload));
+  }
 
-        this.RSAKey.importKey(publicKey, 'pkcs8-public-pem');
-        this.RSAKey.setOptions({signingScheme: 'pkcs1-sha256'});
-        
-        return this.RSAKey.verify(Buffer.from(payload), Buffer.from(signature, 'hex'), 'hex');
-    }
-
-    async getMsgHash(payload: string): Promise<string> {
-        return sha256(payload);
-    }
-
-    async getObjHash(payload: object): Promise<string> {
-        return sha256(JSON.stringify(payload));
-    }
-
-    async getPrivateKeyByPublic(publicKey: string): Promise<string> {
-        const privateKey: KeyPair[] = await this.keyPairModel.find({'publicKey': publicKey});
-        return privateKey.length > 0 ? privateKey[0].privateKey : '';
-    }
+  async getPrivateKeyByPublic(publicKey: string): Promise<string> {
+    const privateKey: KeyPair[] = await this.keyPairModel.find({ publicKey });
+    return privateKey.length > 0 ? privateKey[0].privateKey : '';
+  }
 }

@@ -1,9 +1,8 @@
-import { IsString } from "class-validator";
+import { IsString } from 'class-validator';
 
 export class SignObjectPacketDTO {
+  readonly message: object;
 
-    readonly message: object;
-
-    @IsString()
-    readonly privateKey: string;
+  @IsString()
+  readonly privateKey: string;
 }

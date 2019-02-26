@@ -1,7 +1,6 @@
-import { IsString } from "class-validator";
+import { IsString } from 'class-validator';
 
 export class MsgDTO {
-
-    @IsString()
-    readonly msg: string;
+  @IsString()
+  readonly msg: string;
 }

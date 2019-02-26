@@ -17,13 +17,13 @@ export class ValidatorPipe implements PipeTransform<any> {
     const object = plainToClass(metatype, value);
     const errors = await validate(object);
     if (errors.length > 0) {
-      throw new BadRequestException("DTO validation error", '' + errors[0]);
+      throw new BadRequestException('DTO validation error', '' + errors[0]);
     }
     return value;
   }
 
   private toValidate(metatype: any): boolean {
     const types = [String, Boolean, Number, Array, Object];
-    return !types.find((type) => metatype === type);
+    return !types.find(type => metatype === type);
   }
 }

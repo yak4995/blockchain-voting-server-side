@@ -9,11 +9,13 @@ describe('AppController', () => {
   beforeAll(async () => {
     const mockAppLoggerProvider = {
       provide: 'logger',
-      useFactory: async () => { return new AppLogger('logs', 'root-test.txt') }
+      useFactory: async () => {
+        return new AppLogger('logs', 'root-test.txt');
+      },
     };
     app = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService, mockAppLoggerProvider]
+      providers: [AppService, mockAppLoggerProvider],
     }).compile();
   });
 

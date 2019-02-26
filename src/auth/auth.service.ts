@@ -7,20 +7,17 @@ import { JwtTokenDTO } from './dto/JwtTokenDTO';
 
 @Injectable()
 export class AuthService {
-
-  //обязателен и для OAuth2 стратегии (но с первым параметром другого типа - сервисом получения юзера по токену) и для JWT-стратегии
+  // обязателен и для OAuth2 стратегии (но с первым параметром другого типа - сервисом получения юзера по токену) и для JWT-стратегии
   constructor(private readonly jwtService: JwtService, private readonly configService: ConfigService) {}
 
-  //только для JWT-стратегии
-  //используется в AuthController для выдачи токена клиенту по переданным кредам
+  // только для JWT-стратегии
+  // используется в AuthController для выдачи токена клиенту по переданным кредам
   async createToken(outerServiceCredentials: OuterServiceCredentialsDTO): Promise<JwtTokenDTO> {
-
-    let appName = this.configService.get('OUTER_APP_NAME'),
-        appKey = this.configService.get('OUTER_APP_KEY');
+    const appName = this.configService.get('OUTER_APP_NAME'),
+      appKey = this.configService.get('OUTER_APP_KEY');
     if (outerServiceCredentials.name === appName && outerServiceCredentials.key === appKey) {
-
       const internalService: JwtPayload = { name: appName };
-      //содержимое расшифрованного токена
+      // содержимое расшифрованного токена
       /*
       HEADER:
       {
@@ -51,14 +48,12 @@ export class AuthService {
     Пример: return await this.usersService.findOneByEmail(payload.email);
     Но в нашем случае у нас одно значение в конфиге
   */
-  //возвращает обьект, представляющий пользователя, которому принадлежал переданный токен
-  async validateUser(payload: JwtPayload): Promise<any> {
+  // возвращает обьект, представляющий пользователя, которому принадлежал переданный токен
+  async validateUser(payload: JwtPayload): Promise<{ name: string } | null> {
     return this.configService.get('OUTER_APP_NAME') === payload.name
-      ?
-        {
-          name: payload.name
+      ? {
+          name: payload.name,
         }
-      :
-        null;
+      : null;
   }
 }

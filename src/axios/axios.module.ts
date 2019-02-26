@@ -5,13 +5,9 @@ import { AxiosController } from './axios.controller';
 import { AxiosService } from './axios.service';
 
 @Module({
-  imports: [
-    LoggerModule.forRoot('axios.txt'),
-    ConfigModule,
-    HttpModule
-  ],
+  imports: [LoggerModule.forRoot('axios.txt'), ConfigModule, HttpModule],
   controllers: [AxiosController],
   providers: [AxiosService],
-  exports: [AxiosService]
+  exports: [AxiosService],
 })
 export class AxiosModule {}

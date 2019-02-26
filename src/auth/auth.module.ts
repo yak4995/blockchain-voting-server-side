@@ -10,7 +10,7 @@ import { AuthController } from './auth.controller';
 @Module({
   imports: [
     ConfigModule,
-    //тоже самое, что и forRoot
+    // тоже самое, что и forRoot
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -21,14 +21,11 @@ import { AuthController } from './auth.controller';
         },
       }),
       inject: [ConfigService],
-    })
+    }),
   ],
-  providers: [
-    AuthService,
-    JwtStrategy
-  ],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
-  //реэкспорт PassportModule в модули, которые импортируют этот
-  exports: [PassportModule]
+  // реэкспорт PassportModule в модули, которые импортируют этот
+  exports: [PassportModule],
 })
 export class AuthModule {}

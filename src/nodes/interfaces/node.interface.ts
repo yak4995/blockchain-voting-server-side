@@ -1,6 +1,6 @@
 import { Document } from 'mongoose';
 
-//А этот класс, в отличии от DTO, показывает интерфейс Node не во время передачи по сети, а внутри серверной части приложения
+// А этот класс, в отличии от DTO, показывает интерфейс Node не во время передачи по сети, а внутри серверной части приложения
 export interface Node extends Document {
   readonly hash: string;
   readonly parentHash: string;

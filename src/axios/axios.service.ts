@@ -5,10 +5,9 @@ import * as jwt_decode from 'jwt-decode';
 
 @Injectable()
 export class AxiosService {
-
   private readonly clientUrl: string;
-  private readonly OAuthClientId: string; 
-  private readonly OAuthClientSecret: string; 
+  private readonly OAuthClientId: string;
+  private readonly OAuthClientSecret: string;
 
   private readonly ERROR_TEXT = 'Incorrect client oauth args';
 
@@ -19,41 +18,38 @@ export class AxiosService {
   }
 
   async getClientAccessToken(axiosAuthDto: AxiosAuthDTO): Promise<string> {
-
     try {
-        const response = await this.httpService.post(
-                this.clientUrl + '/oauth/token',
-                {
-                    grant_type: 'password',
-                    client_id: this.OAuthClientId,
-                    client_secret: this.OAuthClientSecret,
-                    username: axiosAuthDto.username,
-                    password: axiosAuthDto.password,
-                    scope: ''
-                })
-                .toPromise(),
-              result = response.data;
-        return jwt_decode<any>(await result.access_token).jti;
+      const response = await this.httpService
+          .post(this.clientUrl + '/oauth/token', {
+            grant_type: 'password',
+            client_id: this.OAuthClientId,
+            client_secret: this.OAuthClientSecret,
+            username: axiosAuthDto.username,
+            password: axiosAuthDto.password,
+            scope: '',
+          })
+          .toPromise(),
+        result = response.data;
+      return jwt_decode<any>(await result.access_token).jti;
     } catch (e) {
-        throw new BadRequestException(this.ERROR_TEXT, 'Incorrect client oauth args: ' + e.message);
+      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect client oauth args: ' + e.message);
     }
   }
 
   async getUserByAccessToken(accessToken: string) {
     try {
-        const response = await this.httpService.get(
-                this.clientUrl + '/api/user',
-                {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': `Bearer ${accessToken}`
-                    }
-                })
-                .toPromise(),
-              result = response.data;
-        return await result;
+      const response = await this.httpService
+          .get(this.clientUrl + '/api/user', {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .toPromise(),
+        result = response.data;
+      return await result;
     } catch (e) {
-        throw new BadRequestException(this.ERROR_TEXT, 'Incorrect access token: ' + e.message);
+      throw new BadRequestException(this.ERROR_TEXT, 'Incorrect access token: ' + e.message);
     }
   }
 }
