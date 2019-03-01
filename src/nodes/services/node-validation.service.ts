@@ -17,7 +17,7 @@ export class NodeValidationService {
     private readonly configService: ConfigService,
     private readonly axiosService: AxiosService,
     private readonly nodeReadService: NodeReadService,
-    private readonly registeredVotersService: RegisteredVotersService
+    private readonly registeredVotersService: RegisteredVotersService,
   ) {}
 
   // получаем обьект узла за исключением полей хеша и подписи. Используется для генерации/проверки хеша и подписи
@@ -111,7 +111,7 @@ export class NodeValidationService {
     }
 
     // не регался ли уже этот пользователь на эти выборы
-    if (voterId !== 0 && await this.registeredVotersService.isRegisteredVoter(chainHeadNode.hash, voterId)) {
+    if (voterId !== 0 && (await this.registeredVotersService.isRegisteredVoter(chainHeadNode.hash, voterId))) {
       throw new BadRequestException(this.ERROR_TEXT, 'This user has been registered in the voting already!');
     }
 
@@ -198,7 +198,7 @@ export class NodeValidationService {
   }
 
   async validateExternalNode(externalNodeDto: NodeDto): Promise<void> {
-    //проверить тип ноды и соотв. валидировать разными методами
+    // проверить тип ноды и соотв. валидировать разными методами
     switch (externalNodeDto.type) {
       case 1:
         await this.validateChainHeadNode(externalNodeDto, true);

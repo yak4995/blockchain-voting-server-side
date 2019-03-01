@@ -19,11 +19,11 @@ export class NodePersistanceService {
     private readonly nodeReadService: NodeReadService,
     private readonly registeredVotersService: RegisteredVotersService,
     @Inject('NodeModelToken') private readonly nodeModel: Model<Node>,
-    @InjectQueue('store') private readonly queue: Queue
+    @InjectQueue('store') private readonly queue: Queue,
   ) {}
 
   async getNodeWithHashAndSign(startNodeObj: object, privateKey: string): Promise<NodeDto> {
-    let result: NodeDto = new NodeDto();
+    const result: NodeDto = new NodeDto();
     Object.keys(startNodeObj).forEach(key => (result[key] = startNodeObj[key]));
     result.hash = await this.rsaService.getObjHash(startNodeObj);
     result.signature = await this.rsaService.getObjSignature(startNodeObj, privateKey);
@@ -43,7 +43,7 @@ export class NodePersistanceService {
     // сгенерить хеш и подпись
     const fullNode: NodeDto = await this.getNodeWithHashAndSign(
       this.nodeValidationService.getNodeForCryptoCheck(createNodeDto),
-      await this.rsaService.getPrivateKeyByPublic(createNodeDto.authorPublicKey)
+      await this.rsaService.getPrivateKeyByPublic(createNodeDto.authorPublicKey),
     );
 
     await this.registeredVotersService.persistRegisteredVoter(
@@ -56,9 +56,9 @@ export class NodePersistanceService {
   // создание узла третьего типа (через CLI)
   async startVoting(createNodeDto: NodeDto): Promise<Node> {
     const createdNode: Node = await new this.nodeModel(createNodeDto).save();
-    this.queue.add(createdNode, {
+    await this.queue.add(createdNode, {
       removeOnComplete: true,
-      removeOnFail: true
+      removeOnFail: true,
     });
     return createdNode;
   }
@@ -70,7 +70,7 @@ export class NodePersistanceService {
   }
 
   async pushExternalNode(externalNodeDto: NodeDto): Promise<Node> {
-    //проверить есть ли нода с таким хешем в базе и кинуть exception, если есть
+    // проверить есть ли нода с таким хешем в базе и кинуть exception, если есть
     try {
       const existedBlocks: Node = await this.nodeReadService.findByHash(externalNodeDto.hash);
       throw new BadRequestException(this.ERROR_TEXT, 'Such node already exists!');

@@ -40,18 +40,12 @@ import { NodeSenderProcessor } from './processors/node-sender.processor';
         {
           concurrency: 1,
           name: 'nodeSenderProcessor',
-          callback: NodeSenderProcessor
-        }
-      ]
-    })
+          callback: NodeSenderProcessor,
+        },
+      ],
+    }),
   ],
   controllers: [NodeController],
-  providers: [
-    NodeValidationService,
-    NodeReadService,
-    NodePersistanceService,
-    RegisteredVotersService,
-    ...nodeProviders
-  ],
+  providers: [NodeValidationService, NodeReadService, NodePersistanceService, RegisteredVotersService, ...nodeProviders],
 })
 export class NodeModule {}

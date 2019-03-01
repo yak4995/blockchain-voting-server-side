@@ -108,10 +108,10 @@ describe('NodeController tests', () => {
             {
               concurrency: 1,
               name: 'nodeSenderProcessor',
-              callback: NodeSenderProcessor
-            }
-          ]
-        })
+              callback: NodeSenderProcessor,
+            },
+          ],
+        }),
       ],
       controllers: [NodeController],
       providers: [
@@ -136,7 +136,7 @@ describe('NodeController tests', () => {
 
     jest.spyOn(nodeController, 'broadcastNode').mockImplementation(async (node: any) => {
       return;
-    })
+    });
   });
 
   describe('createChainHeadTest', () => {
@@ -530,5 +530,5 @@ describe('NodeController tests', () => {
 
   afterAll(() => {
     jest.spyOn(nodeController, 'broadcastNode').mockClear();
-  })
+  });
 });

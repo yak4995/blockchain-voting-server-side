@@ -17,7 +17,7 @@ export class AxiosService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-    @Inject('KnownServersModelToken') private readonly knownServerModel: Model<KnownServer>
+    @Inject('KnownServersModelToken') private readonly knownServerModel: Model<KnownServer>,
   ) {
     this.clientUrl = configService.get('OAUTH_APP_URL');
     this.OAuthClientId = configService.get('OAUTH_APP_ID');
@@ -62,14 +62,13 @@ export class AxiosService {
 
   async pushNode(node: NodeDto): Promise<void> {
     try {
-      console.log('push');
       (await this.knownServerModel.find()).forEach(async (server: KnownServer) => {
         await this.httpService
           .post(server.url + '/nodes/get-external-node', {
             headers: {
-              Accept: 'application/json'
+              Accept: 'application/json',
             },
-            node
+            node,
           })
           .toPromise();
       });

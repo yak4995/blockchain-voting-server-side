@@ -20,9 +20,9 @@ export class NodeController {
   ) {}
 
   async broadcastNode(node: Node): Promise<void> {
-    this.queue.add(node, {
+    await this.queue.add(node, {
       removeOnComplete: true,
-      removeOnFail: true
+      removeOnFail: true,
     });
   }
 
@@ -152,7 +152,7 @@ export class NodeController {
   async getExternalNode(@Body() externalNodeDto: NodeDto): Promise<Node> {
     try {
       const createdNode: Node = await this.nodePersistanceService.pushExternalNode(externalNodeDto);
-      this.broadcastNode(createdNode);
+      await this.broadcastNode(createdNode);
       return createdNode;
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);

@@ -28,8 +28,8 @@ export const NodeSenderProcessor = async (job: Job, done: DoneCallback) => {
       registeredVoters: node.registeredVoters,
       votingPublicKey: node.votingPublicKey,
       admittedUserPublicKey: node.admittedUserPublicKey,
-      selectedVariant: node.selectedVariant
-    }
+      selectedVariant: node.selectedVariant,
+    };
     axiosService.pushNode(nodeDto);
     done(null, job.data);
   } catch (err) {

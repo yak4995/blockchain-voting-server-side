@@ -39,7 +39,7 @@ import { NodeModule } from './nodes/node.module';
       };
       const startNode: NodeDto = await nodePersistanceService.getNodeWithHashAndSign(
         startNodeObj,
-        await rsaService.getPrivateKeyByPublic(currentChainHead.votingPublicKey)
+        await rsaService.getPrivateKeyByPublic(currentChainHead.votingPublicKey),
       );
       await nodePersistanceService.startVoting(startNode);
     } else {
