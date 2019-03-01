@@ -23,7 +23,6 @@ import { NodeModule } from './nodes/node.module';
     if (lastChainNode.type === 2) {
       const registeredVoters: number[] = await registeredVotersService.getRegisteredVotersByVotingHash(currentChainHead.hash);
       registeredVotersService.purgeRegisteredVotersInfoByVotingHash(currentChainHead.hash);
-
       const startNodeObj = {
         parentHash: lastChainNode.hash,
         authorPublicKey: currentChainHead.votingPublicKey,
@@ -38,24 +37,11 @@ import { NodeModule } from './nodes/node.module';
         admittedUserPublicKey: '',
         selectedVariant: '',
       };
-      const votingPrivateKey: string = await rsaService.getPrivateKeyByPublic(currentChainHead.votingPublicKey);
-      const startNode: NodeDto = {
-        hash: await rsaService.getObjHash(startNodeObj),
-        parentHash: startNodeObj.parentHash,
-        authorPublicKey: startNodeObj.authorPublicKey,
-        signature: await rsaService.getObjSignature(startNodeObj, votingPrivateKey),
-        type: startNodeObj.type,
-        votingDescription: startNodeObj.votingDescription,
-        startTime: startNodeObj.startTime,
-        endTime: startNodeObj.endTime,
-        candidates: startNodeObj.candidates,
-        admittedVoters: startNodeObj.admittedVoters,
-        registeredVoters: startNodeObj.registeredVoters,
-        votingPublicKey: startNodeObj.votingPublicKey,
-        admittedUserPublicKey: startNodeObj.admittedUserPublicKey,
-        selectedVariant: startNodeObj.selectedVariant,
-      };
-      nodePersistanceService.startVoting(startNode);
+      const startNode: NodeDto = await nodePersistanceService.getNodeWithHashAndSign(
+        startNodeObj,
+        await rsaService.getPrivateKeyByPublic(currentChainHead.votingPublicKey)
+      );
+      await nodePersistanceService.startVoting(startNode);
     } else {
     }
   }

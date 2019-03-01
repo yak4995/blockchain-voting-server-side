@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Post, Body, UsePipes, Inject, Param } from '@nestjs/common';
+import { Controller, Get, UseGuards, Post, Body, UsePipes, Inject, Param, BadRequestException } from '@nestjs/common';
 import { Node } from './interfaces/node.interface';
 import { NodeDto } from './dto/create-node.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -7,14 +7,24 @@ import { ValidatorPipe } from '../common/validator.pipe';
 import { ParseStringPipe } from '../common/parse-string.pipe';
 import { NodeReadService } from './services/node-read.service';
 import { NodePersistanceService } from './services/node-persistance.service';
+import { Queue } from 'bull';
+import { InjectQueue } from 'nest-bull';
 
 @Controller('nodes')
 export class NodeController {
   constructor(
     private readonly nodeReadService: NodeReadService,
     private readonly nodePersistanceService: NodePersistanceService,
+    @InjectQueue('store') private readonly queue: Queue,
     @Inject('logger') private readonly loggerService: AppLogger,
   ) {}
+
+  async broadcastNode(node: Node): Promise<void> {
+    this.queue.add(node, {
+      removeOnComplete: true,
+      removeOnFail: true
+    });
+  }
 
   // получение узла по переданному хешу
   @Get(':hash')
@@ -98,7 +108,10 @@ export class NodeController {
   @UsePipes(ValidatorPipe)
   async createChain(@Body() createNodeDto: NodeDto): Promise<Node> {
     try {
-      return await this.nodePersistanceService.createChain(createNodeDto);
+      const createdNode: Node = await this.nodePersistanceService.createChain(createNodeDto);
+      // хоть и асинхронная задача, но мы не ждем подтверждения, используя await
+      this.broadcastNode(createdNode);
+      return createdNode;
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -110,7 +123,9 @@ export class NodeController {
   @UsePipes(ValidatorPipe)
   async registerVoter(@Body() createNodeDto: NodeDto, @Param('voterId') voterId: number, @Param('accessToken') accessToken: string): Promise<Node> {
     try {
-      return await this.nodePersistanceService.registerVoter(createNodeDto, voterId, accessToken);
+      const createdNode: Node = await this.nodePersistanceService.registerVoter(createNodeDto, voterId, accessToken);
+      this.broadcastNode(createdNode);
+      return createdNode;
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;
@@ -122,7 +137,23 @@ export class NodeController {
   @UsePipes(ValidatorPipe)
   async registerVote(@Body() createNodeDto: NodeDto): Promise<Node> {
     try {
-      return await this.nodePersistanceService.registerVote(createNodeDto);
+      const createdNode: Node = await this.nodePersistanceService.registerVote(createNodeDto);
+      this.broadcastNode(createdNode);
+      return createdNode;
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
+
+  // внешний узел (сервера добавляются/удаляются в базу вручную)
+  @Post('get-external-node')
+  @UsePipes(ValidatorPipe)
+  async getExternalNode(@Body() externalNodeDto: NodeDto): Promise<Node> {
+    try {
+      const createdNode: Node = await this.nodePersistanceService.pushExternalNode(externalNodeDto);
+      this.broadcastNode(createdNode);
+      return createdNode;
     } catch (e) {
       this.loggerService.error(e.message.error, e.trace);
       throw e;

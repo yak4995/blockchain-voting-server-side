@@ -1,7 +1,10 @@
-import { Injectable, BadRequestException, HttpService } from '@nestjs/common';
+import { Injectable, BadRequestException, HttpService, Inject } from '@nestjs/common';
 import { ConfigService } from '../config/config.service';
 import { AxiosAuthDTO } from './dto/axios-auth.dto';
+import { NodeDto } from '../nodes/dto/create-node.dto';
 import * as jwt_decode from 'jwt-decode';
+import { Model } from 'mongoose';
+import { KnownServer } from '../nodes/interfaces/known-server.interface';
 
 @Injectable()
 export class AxiosService {
@@ -11,7 +14,11 @@ export class AxiosService {
 
   private readonly ERROR_TEXT = 'Incorrect client oauth args';
 
-  constructor(private readonly configService: ConfigService, private readonly httpService: HttpService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
+    @Inject('KnownServersModelToken') private readonly knownServerModel: Model<KnownServer>
+  ) {
     this.clientUrl = configService.get('OAUTH_APP_URL');
     this.OAuthClientId = configService.get('OAUTH_APP_ID');
     this.OAuthClientSecret = configService.get('OAUTH_APP_SECRET');
@@ -50,6 +57,24 @@ export class AxiosService {
       return await result;
     } catch (e) {
       throw new BadRequestException(this.ERROR_TEXT, 'Incorrect access token: ' + e.message);
+    }
+  }
+
+  async pushNode(node: NodeDto): Promise<void> {
+    try {
+      console.log('push');
+      (await this.knownServerModel.find()).forEach(async (server: KnownServer) => {
+        await this.httpService
+          .post(server.url + '/nodes/get-external-node', {
+            headers: {
+              Accept: 'application/json'
+            },
+            node
+          })
+          .toPromise();
+      });
+    } catch (e) {
+      throw new BadRequestException(this.ERROR_TEXT, `We have not being able to push node`);
     }
   }
 }

@@ -4,7 +4,10 @@ import { AppLogger } from './logger/app-logger.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService, @Inject('logger') private readonly logger: AppLogger) {}
+  constructor(
+    private readonly appService: AppService,
+    @Inject('logger') private readonly logger: AppLogger
+  ) {}
 
   @Get()
   root(): string {

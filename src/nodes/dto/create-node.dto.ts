@@ -6,7 +6,7 @@ export class NodeDto {
   @ValidateIf(o => 2 !== o.type)
   @IsString()
   @IsNotEmpty()
-  readonly hash: string;
+  hash: string;
 
   @ValidateIf(o => o.type > 1)
   @IsString()
@@ -20,11 +20,11 @@ export class NodeDto {
   @ValidateIf(o => 2 !== o.type)
   @IsString()
   @IsNotEmpty()
-  readonly signature: string;
+  signature: string;
 
   @IsInt()
   @Min(1)
-  @Max(5)
+  @Max(4)
   readonly type: number;
 
   @ValidateIf(o => [1, 3].includes(o.type))

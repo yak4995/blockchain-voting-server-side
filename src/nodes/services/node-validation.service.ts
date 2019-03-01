@@ -17,7 +17,7 @@ export class NodeValidationService {
     private readonly configService: ConfigService,
     private readonly axiosService: AxiosService,
     private readonly nodeReadService: NodeReadService,
-    private readonly registeredVotersService: RegisteredVotersService,
+    private readonly registeredVotersService: RegisteredVotersService
   ) {}
 
   // получаем обьект узла за исключением полей хеша и подписи. Используется для генерации/проверки хеша и подписи
@@ -30,7 +30,7 @@ export class NodeValidationService {
   }
 
   // валидация узла первого типа:
-  async validateChainHeadNode(createNodeDto: NodeDto): Promise<void> {
+  async validateChainHeadNode(createNodeDto: NodeDto, isExternal: boolean = false): Promise<void> {
     const adminPublicKey: string = readFileSync(this.configService.get('ADMIN_PUBLIC_KEY_PATH'), 'utf8').replace(/\r\n/g, '\n');
 
     // является ли автор админом
@@ -50,7 +50,11 @@ export class NodeValidationService {
     try {
       const existedBlocks: Node = await this.nodeReadService.findByHash(createNodeDto.hash);
       throw new BadRequestException(this.ERROR_TEXT, 'Such node already exists!');
-    } catch (e) {}
+    } catch (e) {
+      if (e.message.error !== 'Current node with specified hash does not exist!') {
+        throw new BadRequestException(this.ERROR_TEXT, 'Such node already exists!');
+      }
+    }
 
     // type = 1
     // startTime > NOW()
@@ -62,7 +66,7 @@ export class NodeValidationService {
     }
 
     // votingPublicKey есть в базе со своим приватным собратом
-    if ('' === (await this.rsaService.getPrivateKeyByPublic(createNodeDto.votingPublicKey))) {
+    if (!isExternal && '' === (await this.rsaService.getPrivateKeyByPublic(createNodeDto.votingPublicKey))) {
       throw new BadRequestException(this.ERROR_TEXT, 'Incorrect votingPublicKey!');
     }
 
@@ -107,7 +111,7 @@ export class NodeValidationService {
     }
 
     // не регался ли уже этот пользователь на эти выборы
-    if (await this.registeredVotersService.isRegisteredVoter(chainHeadNode.hash, voterId)) {
+    if (voterId !== 0 && await this.registeredVotersService.isRegisteredVoter(chainHeadNode.hash, voterId)) {
       throw new BadRequestException(this.ERROR_TEXT, 'This user has been registered in the voting already!');
     }
 
@@ -191,5 +195,26 @@ export class NodeValidationService {
     // зарегистрирован ли ключ автора на эти выборы (получить тип 3)
     if (!(await this.isAdmittedVoter(startVotingNode.hash, createNodeDto.authorPublicKey)))
       throw new BadRequestException(this.ERROR_TEXT, 'Your are not registered voter!');
+  }
+
+  async validateExternalNode(externalNodeDto: NodeDto): Promise<void> {
+    //проверить тип ноды и соотв. валидировать разными методами
+    switch (externalNodeDto.type) {
+      case 1:
+        await this.validateChainHeadNode(externalNodeDto, true);
+        break;
+      case 2:
+        // проблема: мы не знаем приватного ключа выборов, не можем его сохранить, а значить и провалидировать подпись
+        await this.validateRegisterVoterNode(externalNodeDto, 0);
+        break;
+      case 3:
+        // проблема: мы не знаем приватного ключа выборов, не можем его сохранить, а значить и провалидировать подпись
+        break;
+      case 4:
+        await this.validateVoteNode(externalNodeDto);
+        break;
+      default:
+        throw new BadRequestException(this.ERROR_TEXT, 'Incorrect type!');
+    }
   }
 }

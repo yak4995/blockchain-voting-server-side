@@ -11,12 +11,14 @@ import { NodeValidationService } from './services/node-validation.service';
 import { NodeReadService } from './services/node-read.service';
 import { NodePersistanceService } from './services/node-persistance.service';
 import { RegisteredVotersService } from './services/registered-voters.service';
+import { BullModule } from 'nest-bull';
+import { NodeSenderProcessor } from './processors/node-sender.processor';
 
 @Module({
   imports: [
     LoggerModule.forRoot('node.txt'),
     /*
-      Этот модуль использует метод MongooseModule.forFeature (),
+      Этот модуль использует метод MongooseModule.forFeature(),
       чтобы определить, какие модели должны быть зарегистрированы в текущем модуле.
       Благодаря этому мы можем внедрить Mongoose-модель для Node в NodeService с помощью декоратора @InjectModel
       по ключу 'Node'
@@ -27,8 +29,29 @@ import { RegisteredVotersService } from './services/registered-voters.service';
     ConfigModule,
     CryptoModule,
     AxiosModule,
+    BullModule.forRoot({
+      name: 'store',
+      options: {
+        redis: {
+          port: 6379,
+        },
+      },
+      processors: [
+        {
+          concurrency: 1,
+          name: 'nodeSenderProcessor',
+          callback: NodeSenderProcessor
+        }
+      ]
+    })
   ],
   controllers: [NodeController],
-  providers: [NodeValidationService, NodeReadService, NodePersistanceService, RegisteredVotersService, ...nodeProviders],
+  providers: [
+    NodeValidationService,
+    NodeReadService,
+    NodePersistanceService,
+    RegisteredVotersService,
+    ...nodeProviders
+  ],
 })
 export class NodeModule {}

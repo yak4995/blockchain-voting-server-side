@@ -15,6 +15,8 @@ import { NodeReadService } from './services/node-read.service';
 import { NodePersistanceService } from './services/node-persistance.service';
 import { RegisteredVotersService } from './services/registered-voters.service';
 import { NodeValidationService } from './services/node-validation.service';
+import { BullModule } from 'nest-bull';
+import { NodeSenderProcessor } from './processors/node-sender.processor';
 
 // votingPublicKey - первый в парах в базе
 const correctChainHead: NodeDto = {
@@ -90,7 +92,27 @@ describe('NodeController tests', () => {
     };
 
     const module = await Test.createTestingModule({
-      imports: [DatabaseModule, AuthModule, ConfigModule, HttpModule],
+      imports: [
+        DatabaseModule,
+        AuthModule,
+        ConfigModule,
+        HttpModule,
+        BullModule.forRoot({
+          name: 'store',
+          options: {
+            redis: {
+              port: 6379,
+            },
+          },
+          processors: [
+            {
+              concurrency: 1,
+              name: 'nodeSenderProcessor',
+              callback: NodeSenderProcessor
+            }
+          ]
+        })
+      ],
       controllers: [NodeController],
       providers: [
         mockAppLoggerProvider,
@@ -101,7 +123,7 @@ describe('NodeController tests', () => {
         ...nodeProviders,
         RSAService,
         ...rsaProviders,
-        { provide: AxiosService, useValue: new AxiosService(new ConfigService('test.env'), new HttpService()) },
+        { provide: AxiosService, useValue: new AxiosService(new ConfigService('test.env'), new HttpService(), null) },
       ],
     }).compile();
 
@@ -111,6 +133,10 @@ describe('NodeController tests', () => {
     registeredVotersService = module.get<RegisteredVotersService>(RegisteredVotersService);
     rsaService = module.get<RSAService>(RSAService);
     nodeController = module.get<NodeController>(NodeController);
+
+    jest.spyOn(nodeController, 'broadcastNode').mockImplementation(async (node: any) => {
+      return;
+    })
   });
 
   describe('createChainHeadTest', () => {
@@ -199,7 +225,7 @@ describe('NodeController tests', () => {
   });
 
   describe('Registering new voter test', () => {
-    beforeAll(async () => {
+    beforeAll(() => {
       jest.spyOn(nodeReadService, 'findByHash').mockImplementation(
         (hash: string): any => {
           if (hash === 'incorrect') {
@@ -367,14 +393,14 @@ describe('NodeController tests', () => {
       jest.spyOn(nodeValidationService, 'validateVoter').mockClear();
     });
 
-    afterAll(async () => {
+    afterAll(() => {
       jest.spyOn(nodeReadService, 'findByHash').mockClear();
       jest.spyOn(axiosService, 'getUserByAccessToken').mockClear();
     });
   });
 
   describe('voteTest', () => {
-    beforeAll(async () => {
+    beforeAll(() => {
       // мокаем getMsgHash и verifyMsgSignature, findByHash
       jest.spyOn(rsaService, 'getMsgHash').mockImplementation(async (payload: string) => {
         return '';
@@ -495,10 +521,14 @@ describe('NodeController tests', () => {
       jest.spyOn(nodeValidationService, 'isAdmittedVoter').mockClear();
     });
 
-    afterAll(async () => {
+    afterAll(() => {
       jest.spyOn(rsaService, 'getMsgHash').mockClear();
       jest.spyOn(rsaService, 'verifyMsgSignature').mockClear();
       jest.spyOn(nodeReadService, 'findByHash').mockClear();
     });
   });
+
+  afterAll(() => {
+    jest.spyOn(nodeController, 'broadcastNode').mockClear();
+  })
 });
