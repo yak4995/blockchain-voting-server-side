@@ -101,7 +101,9 @@ describe('NodeController tests', () => {
           name: 'store',
           options: {
             redis: {
-              port: 6379,
+              port: Number(process.env.REDIS_PORT),
+              host: process.env.REDIS_URL,
+              password: process.env.REDIS_PASS,
             },
           },
           processors: [
@@ -123,7 +125,7 @@ describe('NodeController tests', () => {
         ...nodeProviders,
         RSAService,
         ...rsaProviders,
-        { provide: AxiosService, useValue: new AxiosService(new ConfigService('test.env'), new HttpService(), null) },
+        { provide: AxiosService, useValue: new AxiosService(new ConfigService('test'), new HttpService(), null) },
       ],
     }).compile();
 
@@ -210,6 +212,9 @@ describe('NodeController tests', () => {
     });
 
     it('should throw Error about incorrect signature', async () => {
+      jest.spyOn(rsaService, 'getPrivateKeyByPublic').mockImplementationOnce(async (publicKey: string) => {
+        return 'smth';
+      });
       jest.spyOn(rsaService, 'verifyMsgSignature').mockImplementationOnce(async (payload: string, signature: string, publicKey: string) => {
         return false;
       });
@@ -221,6 +226,7 @@ describe('NodeController tests', () => {
       }
 
       jest.spyOn(rsaService, 'verifyMsgSignature').mockClear();
+      jest.spyOn(rsaService, 'getPrivateKeyByPublic').mockClear();
     });
   });
 

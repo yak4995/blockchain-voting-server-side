@@ -2,17 +2,14 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 
 export class ConfigService {
-  private readonly envConfig: { [key: string]: string };
-
-  constructor(filePath: string) {
-    // workaround for debugging accros nodemon
-    if ('undefined.env' === filePath) {
-      filePath = 'development.env';
+  constructor(environment: string) {
+    if (['development', 'undefined', 'test'].includes(environment)) {
+      dotenv.config({ path: 'development.env' }); // переносим все данные с файла в process.env
     }
-    this.envConfig = dotenv.parse(fs.readFileSync(filePath));
   }
 
   get(key: string): string {
-    return this.envConfig[key];
+    // c прода будет брать сразу с process.env
+    return process.env[key];
   }
 }

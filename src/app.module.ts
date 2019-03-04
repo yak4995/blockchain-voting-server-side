@@ -9,11 +9,8 @@ import { AppService } from './app.service';
 import { CryptoModule } from './crypto/crypto.module';
 import { LoggerModule } from './logger/app-logger.module';
 import { AxiosModule } from './axios/axios.module';
-
-/*
-  Файл test.env в корне предназначен как замена .env файла для тестов Jest
-  Настройки Jest храняться в package.json
-*/
+/*import { BullModule } from 'nest-bull';
+import { Job, DoneCallback } from 'bull';*/
 
 /*
   Последовательность прохождения запроса:
@@ -69,6 +66,22 @@ import { AxiosModule } from './axios/axios.module';
     CryptoModule,
     AxiosModule,
     LoggerModule.forRoot('root.txt'),
+    /*BullModule.forRoot({
+      name: 'store',
+      options: {
+        redis: {
+          port: 11876,
+          host: 'redis-11876.c57.us-east-1-4.ec2.cloud.redislabs.com',
+          password: 'YM1fFoFDOuScpZioci3hEIyOxYmvZO2Z'
+        },
+      },
+      processors: [
+        (job: Job, done?: DoneCallback) => {
+          console.log('Processing job ' + JSON.stringify(job.data));
+          done(null, job.data);
+        }
+      ],
+    }),*/
   ],
   /*
     Сообщаем Nest-у, что такие провайдеры существуют, принадлежат этому модулю (вне модуля провайдеры существовать не могут)

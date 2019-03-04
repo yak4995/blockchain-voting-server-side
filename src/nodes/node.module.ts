@@ -33,7 +33,9 @@ import { NodeSenderProcessor } from './processors/node-sender.processor';
       name: 'store',
       options: {
         redis: {
-          port: 6379,
+          port: Number(process.env.REDIS_PORT),
+          host: process.env.REDIS_URL,
+          password: process.env.REDIS_PASS,
         },
       },
       processors: [

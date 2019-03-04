@@ -11,7 +11,7 @@ import { ConfigService } from './config.service';
         поместить внешнюю библиотеку в контейнер Nest или заменить реальную реализацию фиктивным объектом.
         означает, что когда Nest будет инжектить значение класса ConfigService, он будет использовать значение ниже
       */
-      useValue: new ConfigService(`${process.env.NODE_ENV}.env`),
+      useValue: new ConfigService(process.env.NODE_ENV ? process.env.NODE_ENV : 'undefined'),
       // А вот если надо подменить класс при инжекции, в зависимости от внешних факторов, вместо useValue делают так:
       /*
         useClass: process.env.NODE_ENV === 'development'
