@@ -9,7 +9,7 @@
     "start": "npm run start:prod",
     "start:dev": "set NODE_ENV=development&& nodemon",
     "start:debug": "set NODE_ENV=development&& nodemon --config nodemon-debug.json",
-    "prestart:prod": "rimraf dist && tsc",
+    "prestart:prod": "rm -rf ./dist && tsc",
     "start:prod": "npm run prestart:prod && node dist/main.js",
     "start:hmr": "node dist/server",
     "lint": "tslint -p tsconfig.json -c tslint.json",
