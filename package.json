@@ -6,11 +6,11 @@
   "license": "MIT",
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\"",
-    "start": "ts-node -r tsconfig-paths/register src/main.ts",
+    "start": "npm run start:prod",
     "start:dev": "set NODE_ENV=development&& nodemon",
     "start:debug": "set NODE_ENV=development&& nodemon --config nodemon-debug.json",
     "prestart:prod": "rimraf dist && tsc",
-    "start:prod": "node dist/main.js",
+    "start:prod": "npm run prestart:prod && node dist/main.js",
     "start:hmr": "node dist/server",
     "lint": "tslint -p tsconfig.json -c tslint.json",
     "test": "jest",
