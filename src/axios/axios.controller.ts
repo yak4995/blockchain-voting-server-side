@@ -3,15 +3,18 @@ import { AppLogger } from '../logger/app-logger.service';
 import { ValidatorPipe } from '../common/validator.pipe';
 import { AxiosService } from './axios.service';
 import { AxiosAuthDTO } from './dto/axios-auth.dto';
+import { ApiUseTags, ApiResponse, ApiImplicitParam } from '@nestjs/swagger';
 
+@ApiUseTags('BCVS')
 @Controller('axios')
 export class AxiosController {
   constructor(private readonly axiosService: AxiosService, @Inject('logger') private readonly loggerService: AppLogger) {}
 
   // получение accessToken-а у клиента по кредам юзера
+  @ApiResponse({ status: 200, description: 'Client access token', type: 'string'})
   @Post('oauth-get-token')
   @UsePipes(ValidatorPipe)
-  async oAuthGetToken(@Body() axiosAuthDto: AxiosAuthDTO) {
+  async oAuthGetToken(@Body() axiosAuthDto: AxiosAuthDTO): Promise<string> {
     try {
       return await this.axiosService.getClientAccessToken(axiosAuthDto);
     } catch (e) {
@@ -21,6 +24,7 @@ export class AxiosController {
   }
 
   // получение userId у клиента по accessToken-у юзера
+  @ApiImplicitParam({name: 'accessToken', description: 'Actual client access token'})
   @Get('get-user-id/:accessToken')
   async getUserIdFromClient(@Param('accessToken') accessToken: string) {
     try {
