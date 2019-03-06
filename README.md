@@ -8,13 +8,13 @@
 
 # Команды:
 
-npm run start - build + deploy
-npm run format - запуск prettier
-npm run lint - запуск линтера
-npm run test - запуск unit-тестов
-npm run start:debug - режим дебага
-npm run test:cov - отчет о покрытии тестами приложения
-npm run start:voting-check - консольная Cron-команда, которая отвечает за начало выборов
++ npm run start - build + deploy
++ npm run format - запуск prettier
++ npm run lint - запуск линтера
++ npm run test - запуск unit-тестов
++ npm run start:debug - режим дебага
++ npm run test:cov - отчет о покрытии тестами приложения
++ npm run start:voting-check - консольная Cron-команда, которая отвечает за начало выборов
 
 # REST-API документация:
 
