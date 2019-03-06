@@ -14,6 +14,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('BCVS')
     .addBearerAuth('jwt', 'header')
+    .setSchemes('http', 'https')
     .build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api', app, document);
