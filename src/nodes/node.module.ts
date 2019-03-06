@@ -48,6 +48,12 @@ import { NodeSenderProcessor } from './processors/node-sender.processor';
     }),
   ],
   controllers: [NodeController],
-  providers: [NodeValidationService, NodeReadService, NodePersistanceService, RegisteredVotersService, ...nodeProviders],
+  providers: [
+    NodeValidationService,
+    NodeReadService,
+    NodePersistanceService,
+    RegisteredVotersService,
+    ...nodeProviders
+  ],
 })
 export class NodeModule {}

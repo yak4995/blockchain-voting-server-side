@@ -7,7 +7,12 @@ import { AxiosService } from './axios.service';
 import { bullProviders } from './bull.providers';
 
 @Module({
-  imports: [LoggerModule.forRoot('axios.txt'), DatabaseModule, ConfigModule, HttpModule],
+  imports: [
+    LoggerModule.forRoot('axios.txt'),
+    DatabaseModule,
+    ConfigModule,
+    HttpModule
+  ],
   controllers: [AxiosController],
   providers: [AxiosService, ...bullProviders],
   exports: [AxiosService],
