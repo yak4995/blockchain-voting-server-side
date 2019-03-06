@@ -53,7 +53,7 @@ import { NodeSenderProcessor } from './processors/node-sender.processor';
     NodeReadService,
     NodePersistanceService,
     RegisteredVotersService,
-    ...nodeProviders
+    ...nodeProviders,
   ],
 })
 export class NodeModule {}

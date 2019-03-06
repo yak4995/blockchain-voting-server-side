@@ -11,7 +11,7 @@ import { bullProviders } from './bull.providers';
     LoggerModule.forRoot('axios.txt'),
     DatabaseModule,
     ConfigModule,
-    HttpModule
+    HttpModule,
   ],
   controllers: [AxiosController],
   providers: [AxiosService, ...bullProviders],
