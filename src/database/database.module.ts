@@ -6,6 +6,9 @@ import { ConfigModule } from '../config/config.module';
 @Module({
   imports: [ConfigModule],
   providers: [...databaseProviders],
-  exports: [...databaseProviders],
+  exports: [
+    ...databaseProviders,
+    ConfigModule,
+  ],
 })
 export class DatabaseModule {}

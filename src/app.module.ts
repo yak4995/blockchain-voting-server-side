@@ -1,16 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from './config/config.module';
 import { ConfigService } from './config/config.service';
 import { NodeModule } from './nodes/node.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CryptoModule } from './crypto/crypto.module';
 import { LoggerModule } from './logger/app-logger.module';
-import { AxiosModule } from './axios/axios.module';
-/*import { BullModule } from 'nest-bull';
-import { Job, DoneCallback } from 'bull';*/
 
 /*
   Последовательность прохождения запроса:
@@ -37,7 +32,6 @@ import { Job, DoneCallback } from 'bull';*/
 @Module({
   // Список импортированных модулей, которые экспортируют провайдеров, которые требуются в этом модуле
   imports: [
-    AuthModule,
     /*
       MongooseModule нужно заимпортить в AppModule обязательно (с методом forRoot и переданым ему url подключения к базе),
       чтобы была возможность использовать его в остальных модулях.
@@ -63,25 +57,7 @@ import { Job, DoneCallback } from 'bull';*/
       inject: [ConfigService],
     }),
     NodeModule,
-    CryptoModule,
-    AxiosModule,
     LoggerModule.forRoot('root.txt'),
-    /*BullModule.forRoot({
-      name: 'store',
-      options: {
-        redis: {
-          port: 11876,
-          host: 'redis-11876.c57.us-east-1-4.ec2.cloud.redislabs.com',
-          password: 'YM1fFoFDOuScpZioci3hEIyOxYmvZO2Z'
-        },
-      },
-      processors: [
-        (job: Job, done?: DoneCallback) => {
-          console.log('Processing job ' + JSON.stringify(job.data));
-          done(null, job.data);
-        }
-      ],
-    }),*/
   ],
   /*
     Сообщаем Nest-у, что такие провайдеры существуют, принадлежат этому модулю (вне модуля провайдеры существовать не могут)

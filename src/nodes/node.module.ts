@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { NodeController } from './node.controller';
 import { AuthModule } from '../auth/auth.module';
-import { ConfigModule } from '../config/config.module';
 import { LoggerModule } from '../logger/app-logger.module';
 import { CryptoModule } from '../crypto/crypto.module';
 import { nodeProviders } from './node.providers';
@@ -26,7 +25,6 @@ import { NodeSenderProcessor } from './processors/node-sender.processor';
     // MongooseModule.forFeature([{ name: 'Node', schema: NodeSchema }]),
     DatabaseModule,
     AuthModule,
-    ConfigModule,
     CryptoModule,
     AxiosModule,
     BullModule.forRoot({
@@ -54,6 +52,11 @@ import { NodeSenderProcessor } from './processors/node-sender.processor';
     NodePersistanceService,
     RegisteredVotersService,
     ...nodeProviders,
+  ],
+  exports: [
+    AuthModule,
+    CryptoModule,
+    AxiosModule,
   ],
 })
 export class NodeModule {}

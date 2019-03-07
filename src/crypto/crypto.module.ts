@@ -24,6 +24,8 @@ import { LoggerModule } from '../logger/app-logger.module';
     RSAService,
     ...rsaProviders, // динамический сервис для иньекции по ключу KeyPairModelToken (то есть создания mongoose-модели для KeyPair)
   ],
-  exports: [RSAService],
+  exports: [
+    RSAService,
+  ],
 })
 export class CryptoModule {}

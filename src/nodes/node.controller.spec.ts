@@ -95,7 +95,6 @@ describe('NodeController tests', () => {
       imports: [
         DatabaseModule,
         AuthModule,
-        ConfigModule,
         HttpModule,
         BullModule.forRoot({
           name: 'store',
