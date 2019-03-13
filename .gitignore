@@ -2,6 +2,5 @@
 logs/
 node_modules/
 development.env
-admin-key.txt
 coverage/
 dist/
