@@ -72,7 +72,7 @@ export class NodePersistanceService {
   async pushExternalNode(externalNodeDto: NodeDto): Promise<Node> {
     // проверить есть ли нода с таким хешем в базе и кинуть exception, если есть
     try {
-      const existedBlocks: Node = await this.nodeReadService.findByHash(externalNodeDto.hash);
+      await this.nodeReadService.findByHash(externalNodeDto.hash);
       throw new BadRequestException(this.ERROR_TEXT, 'Such node already exists!');
     } catch (e) {
       if (e.message.error !== 'Current node with specified hash does not exist!') {

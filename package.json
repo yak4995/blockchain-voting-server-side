@@ -7,7 +7,7 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "npm run start:prod",
-    "start:dev": "set NODE_ENV=development&& nodemon",
+    "start:dev": "set NODE_ENV=development&&set PORT=3000&& nodemon",
     "start:debug": "set NODE_ENV=development&& nodemon --config nodemon-debug.json",
     "prestart:prod": "rm -rf ./dist && tsc",
     "start:prod": "node dist/main.js",

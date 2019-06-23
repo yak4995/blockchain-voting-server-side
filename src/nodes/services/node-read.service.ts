@@ -7,8 +7,8 @@ export class NodeReadService {
   constructor(@Inject('NodeModelToken') private readonly nodeModel: Model<Node>) {}
 
   // получение всех выборов (узлов первого типа), пока без пагинации
-  async getAllChainHeads(): Promise<Node[]> {
-    return await this.nodeModel.find({ type: 1 }).exec();
+  getAllChainHeads(): Promise<Node[]> {
+    return this.nodeModel.find({ type: 1 }).exec();
   }
 
   // поиск узла по хешу
@@ -35,8 +35,8 @@ export class NodeReadService {
   }
 
   // получение "прямых детей" узла
-  async findNodeChildren(hash: string): Promise<Node[]> {
-    return await this.nodeModel.find({ parentHash: hash }).exec();
+  findNodeChildren(hash: string): Promise<Node[]> {
+    return this.nodeModel.find({ parentHash: hash }).exec();
   }
 
   // получить последний узел в цепочке, за исключением 4 типа
@@ -54,19 +54,19 @@ export class NodeReadService {
   }
 
   // получение выборов, для которые уже начались, но еще не закончились
-  async getAllChainHeadsInCurrentBoundaries(): Promise<Node[]> {
+  getAllChainHeadsInCurrentBoundaries(): Promise<Node[]> {
     const now: Date = new Date();
     // $gte - greater than or equal
     // $lt - less than
-    return await this.nodeModel.find({ type: 1, startTime: { $lt: now }, endTime: { $gte: now } }).exec();
+    return this.nodeModel.find({ type: 1, startTime: { $lt: now }, endTime: { $gte: now } }).exec();
   }
 
   // получить первый голос на выборах избирателя по хешу узла 3-ого типа и его публичного ключа
-  async getFirstVoteByStartNodeHash(startVotingNodeHash: string, voterPublicKey: string): Promise<Node> {
-    return await this.nodeModel.findOne({ parentHash: startVotingNodeHash, authorPublicKey: voterPublicKey }).exec();
+  getFirstVoteByStartNodeHash(startVotingNodeHash: string, voterPublicKey: string): Promise<Node> {
+    return this.nodeModel.findOne({ parentHash: startVotingNodeHash, authorPublicKey: voterPublicKey }).exec();
   }
 
-  // получить последний(самый актуальный) голос избирателя по его публичному ключу и хешу узла 3-ого типа
+  // получить последний(самый актуальный) голос избирателя по хешу узла 4-ого типа
   async getLastVote(voteNodeHash: string): Promise<Node> {
     // валидация узла startVotingNodeHash и voterPublicKey
     let result: Node = await this.findByHash(voteNodeHash);
@@ -88,5 +88,14 @@ export class NodeReadService {
       result = await this.findParentByHash(result.hash);
     }
     return result;
+  }
+
+  async getVotingResult(hash: string) {
+    const startVotingNode = await this.getLastChainNode(hash);
+    const finalVotesPromises = (await this.findNodeChildren(startVotingNode.hash)).map(voteNode => this.getLastVote(voteNode.hash));
+    return (await Promise.all(finalVotesPromises)).reduce((resultPresentator: object[], voteNode: Node) => {
+      resultPresentator[voteNode.selectedVariant] = resultPresentator[voteNode.selectedVariant] ? ++resultPresentator[voteNode.selectedVariant] : 1;
+      return resultPresentator;
+    }, {});
   }
 }

@@ -12,8 +12,8 @@ export class RegisteredVotersService {
   }
 
   // сохранение зарегистрированого пользователя в базе
-  async persistRegisteredVoter(votingHash: string, voterId: number): Promise<RegisteredVoter> {
-    return await new this.registeredVoterModel({ hash: votingHash, registeredVoterId: voterId }).save();
+  persistRegisteredVoter(votingHash: string, voterId: number): Promise<RegisteredVoter> {
+    return new this.registeredVoterModel({ hash: votingHash, registeredVoterId: voterId }).save();
   }
 
   // получение пользователей, зарегистрировавшихся на выборы с указанным хешем

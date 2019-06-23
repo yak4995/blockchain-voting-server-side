@@ -181,4 +181,16 @@ export class NodeController {
       throw e;
     }
   }
+
+  // получение результатов выборов
+  @ApiImplicitParam({name: 'hash', description: 'Hash of startVotingNode'})
+  @Get('voting-result/:hash')
+  async getVotingResult(@Param('hash', ParseStringPipe) hash: string): Promise<object> {
+    try {
+      return await this.nodeReadService.getVotingResult(hash);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
 }
