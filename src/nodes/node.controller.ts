@@ -9,9 +9,9 @@ import { NodeReadService } from './services/node-read.service';
 import { NodePersistanceService } from './services/node-persistance.service';
 import { Queue } from 'bull';
 import { InjectQueue } from 'nest-bull';
-import { ApiBearerAuth, ApiUseTags, ApiResponse, ApiImplicitParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiUseTags, ApiResponse, ApiImplicitParam, ApiOperation } from '@nestjs/swagger';
 
-@ApiUseTags('BCVS')
+@ApiUseTags('Nodes')
 @Controller('nodes')
 export class NodeController {
   constructor(
@@ -21,16 +21,29 @@ export class NodeController {
     @Inject('logger') private readonly loggerService: AppLogger,
   ) {}
 
-  async broadcastNode(node: Node): Promise<void> {
-    await this.queue.add(node, {
-      removeOnComplete: true,
-      removeOnFail: true,
-    });
+  broadcastNode(node: Node) {
+    this.queue.add(
+      node,
+      {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    );
   }
 
   // получение узла по переданному хешу
-  @ApiImplicitParam({name: 'hash', description: 'Hash of node'})
-  @ApiResponse({ status: 200, description: 'Node', type: NodeDto})
+  @ApiOperation({
+    title: 'получение узла по переданному хешу',
+  })
+  @ApiImplicitParam({
+    name: 'hash',
+    description: 'Hash of node',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Node',
+    type: NodeDto,
+  })
   @Get(':hash')
   async getNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
     try {
@@ -41,21 +54,16 @@ export class NodeController {
     }
   }
 
-  // получение "родительского узла" по хешу прямого потомка
-  @ApiImplicitParam({name: 'hash', description: 'Hash of node, whose parent you want to get'})
-  @ApiResponse({ status: 200, description: 'Parent node', type: NodeDto})
-  @Get('parent/:hash')
-  async getParentNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
-    try {
-      return await this.nodeReadService.findParentByHash(hash);
-    } catch (e) {
-      this.loggerService.error(e.message.error, e.trace);
-      throw e;
-    }
-  }
-
   // получить все узлы (выборы) первого типа в системе
-  @ApiResponse({ status: 200, description: '1-st type nodes', type: NodeDto, isArray: true})
+  @ApiOperation({
+    title: 'получить все узлы (выборы) первого типа в системе',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '1-st type nodes',
+    type: NodeDto,
+    isArray: true,
+  })
   @Get()
   async getAllChainHeads(): Promise<Node[]> {
     try {
@@ -66,9 +74,42 @@ export class NodeController {
     }
   }
 
+  // получение "родительского узла" по хешу прямого потомка
+  @ApiOperation({
+    title: 'получение "родительского узла" по хешу прямого потомка',
+  })
+  @ApiImplicitParam({
+    name: 'hash',
+    description: 'Hash of node, whose parent you want to get',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Parent node',
+    type: NodeDto,
+  })
+  @Get('parent/:hash')
+  async getParentNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+    try {
+      return await this.nodeReadService.findParentByHash(hash);
+    } catch (e) {
+      this.loggerService.error(e.message.error, e.trace);
+      throw e;
+    }
+  }
+
   // поиск головы цепочки по хешу узла, который в этой цепочке состоит
-  @ApiImplicitParam({name: 'hash', description: 'Hash of any chain node'})
-  @ApiResponse({ status: 200, description: 'Head node', type: NodeDto})
+  @ApiOperation({
+    title: 'поиск головы цепочки по хешу узла, который в этой цепочке состоит',
+  })
+  @ApiImplicitParam({
+    name: 'hash',
+    description: 'Hash of any chain node',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Head node',
+    type: NodeDto,
+  })
   @Get('head-by-hash/:hash')
   async getChainHeadBySomeChildHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
     try {
@@ -80,8 +121,19 @@ export class NodeController {
   }
 
   // получение "прямых детей" узла
-  @ApiImplicitParam({name: 'hash', description: 'Hash of node'})
-  @ApiResponse({ status: 200, description: 'Direct child nodes', type: NodeDto, isArray: true})
+  @ApiOperation({
+    title: 'получение "прямых детей" узла',
+  })
+  @ApiImplicitParam({
+    name: 'hash',
+    description: 'Hash of node',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Direct child nodes',
+    type: NodeDto,
+    isArray: true,
+  })
   @Get('children/:hash')
   async getChainChildren(@Param('hash', ParseStringPipe) hash: string): Promise<Node[]> {
     try {
@@ -93,8 +145,18 @@ export class NodeController {
   }
 
   // получить последний узел в цепочке, за исключением 4 типа
-  @ApiImplicitParam({name: 'hash', description: 'Hash of any chain node'})
-  @ApiResponse({ status: 200, description: 'Last node in chain', type: NodeDto})
+  @ApiOperation({
+    title: 'получить последний узел в цепочке, за исключением 4 типа',
+  })
+  @ApiImplicitParam({
+    name: 'hash',
+    description: 'Hash of any chain node',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Last node in chain',
+    type: NodeDto,
+  })
   @Get('last/:hash')
   async getLastChainNode(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
     try {
@@ -105,8 +167,19 @@ export class NodeController {
     }
   }
 
-  @ApiImplicitParam({name: 'hash', description: 'Hash of any vote'})
-  @ApiResponse({ status: 200, description: 'Last Vote', type: NodeDto})
+  // получить последний голос пользователя по его текущему голосу на выборах
+  @ApiOperation({
+    title: 'получить последний голос пользователя по его текущему голосу на выборах',
+  })
+  @ApiImplicitParam({
+    name: 'hash',
+    description: 'Hash of any vote',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Last Vote',
+    type: NodeDto,
+  })
   @Get('get-last-vote/:hash')
   async getLastVote(@Param('hash', ParseStringPipe) voteNodeHash: string): Promise<Node> {
     try {
@@ -119,7 +192,14 @@ export class NodeController {
 
   // создание узла первого типа (требует авторизации, потому что регистрируют выборы только с узла-клиента)
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'created node', type: NodeDto})
+  @ApiOperation({
+    title: 'создание узла первого типа (требует авторизации, потому что регистрируют выборы только с узла-клиента)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'created node',
+    type: NodeDto,
+  })
   @Post('create-chain')
   @UseGuards(JwtAuthGuard) // AuthGuard так как мы не передали ему стратегию, использует её по умолч. (для OAuth2 пришлось бы передать 'bearer')
   @UsePipes(ValidatorPipe)
@@ -136,9 +216,22 @@ export class NodeController {
   }
 
   // создание узла второго типа
-  @ApiImplicitParam({name: 'voterId', description: 'Your userId on client'})
-  @ApiImplicitParam({name: 'accessToken', description: 'Your actual access token on client'})
-  @ApiResponse({ status: 200, description: 'created node', type: NodeDto})
+  @ApiOperation({
+    title: 'создание узла второго типа',
+  })
+  @ApiImplicitParam({
+    name: 'voterId',
+    description: 'Your userId on client',
+  })
+  @ApiImplicitParam({
+    name: 'accessToken',
+    description: 'Your actual access token on client',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'created node',
+    type: NodeDto,
+  })
   @Post('register-voter/:voterId/:accessToken')
   @UsePipes(ValidatorPipe)
   async registerVoter(@Body() createNodeDto: NodeDto, @Param('voterId') voterId: number, @Param('accessToken') accessToken: string): Promise<Node> {
@@ -153,7 +246,14 @@ export class NodeController {
   }
 
   // создание узла четвертого типа
-  @ApiResponse({ status: 200, description: 'created node', type: NodeDto})
+  @ApiOperation({
+    title: 'создание узла четвертого типа',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'created node',
+    type: NodeDto,
+  })
   @Post('vote')
   @UsePipes(ValidatorPipe)
   async registerVote(@Body() createNodeDto: NodeDto): Promise<Node> {
@@ -168,7 +268,14 @@ export class NodeController {
   }
 
   // внешний узел (сервера добавляются/удаляются в базу вручную)
-  @ApiResponse({ status: 200, description: 'created node', type: NodeDto})
+  @ApiOperation({
+    title: 'внешний узел (сервера добавляются/удаляются в базу вручную)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'created node',
+    type: NodeDto,
+  })
   @Post('get-external-node')
   @UsePipes(ValidatorPipe)
   async getExternalNode(@Body() externalNodeDto: NodeDto): Promise<Node> {
@@ -183,7 +290,13 @@ export class NodeController {
   }
 
   // получение результатов выборов
-  @ApiImplicitParam({name: 'hash', description: 'Hash of startVotingNode'})
+  @ApiOperation({
+    title: 'получение результатов выборов',
+  })
+  @ApiImplicitParam({
+    name: 'hash',
+    description: 'Hash of startVotingNode',
+  })
   @Get('voting-result/:hash')
   async getVotingResult(@Param('hash', ParseStringPipe) hash: string): Promise<object> {
     try {

@@ -2,11 +2,15 @@ import { IsNumber, IsString } from 'class-validator';
 import { ApiModelProperty } from '@nestjs/swagger';
 
 export class JwtTokenDTO {
-  @ApiModelProperty()
+  @ApiModelProperty({
+    description: 'время, когда токен истечёт',
+  })
   @IsNumber()
   readonly expiresIn: number;
 
-  @ApiModelProperty()
+  @ApiModelProperty({
+    description: 'токен доступа',
+  })
   @IsString()
   readonly accessToken: string;
 }

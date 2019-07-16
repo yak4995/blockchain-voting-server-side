@@ -2,7 +2,10 @@ import { IsString } from 'class-validator';
 import { ApiModelProperty } from '@nestjs/swagger';
 
 export class MsgDTO {
-  @ApiModelProperty()
+  @ApiModelProperty({
+    description: 'произвольная текстовая строка',
+    required: true,
+  })
   @IsString()
   readonly msg: string;
 }

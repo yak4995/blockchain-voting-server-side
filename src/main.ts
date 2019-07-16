@@ -12,7 +12,6 @@ async function bootstrap() {
     .setTitle('Blockchain server-side voting app')
     .setDescription('It provide do make different votings with blockchain technology')
     .setVersion('1.0')
-    .addTag('BCVS')
     .addBearerAuth('jwt', 'header')
     .setSchemes('http', 'https')
     .build();

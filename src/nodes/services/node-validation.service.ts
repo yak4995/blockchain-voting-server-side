@@ -7,6 +7,7 @@ import { Node } from '../interfaces/node.interface';
 import { NodeDto } from '../dto/create-node.dto';
 import { NodeReadService } from './node-read.service';
 import { RegisteredVotersService } from './registered-voters.service';
+import { NodeType } from 'nodes/enums/nodeType.enum';
 
 @Injectable()
 export class NodeValidationService {
@@ -61,7 +62,7 @@ export class NodeValidationService {
     // endTime > startTime
     const startTimeDt: Date = new Date(createNodeDto.startTime),
       endTimeDt: Date = new Date(createNodeDto.endTime);
-    if (1 !== createNodeDto.type || startTimeDt <= new Date() || startTimeDt >= endTimeDt) {
+    if (NodeType.VOTING_CHAIN_HEAD !== createNodeDto.type || startTimeDt <= new Date() || startTimeDt >= endTimeDt) {
       throw new BadRequestException(this.ERROR_TEXT, 'Incorrect type or dates!');
     }
 
@@ -78,8 +79,7 @@ export class NodeValidationService {
 
   // валидация узла второго типа:
   async validateRegisterVoterNode(createNodeDto: NodeDto, voterId: number): Promise<void> {
-    // type = 2
-    if (2 !== createNodeDto.type) throw new BadRequestException(this.ERROR_TEXT, 'Incorrect type!');
+    if (NodeType.REGISTER_VOTER !== createNodeDto.type) throw new BadRequestException(this.ERROR_TEXT, 'Incorrect type!');
 
     // проверить наличие блока-родителя (и с типом 1 или 2)
     let parentNode: Node = null;
@@ -132,9 +132,9 @@ export class NodeValidationService {
   // проверка, регистрировался ли такой публичный ключ на выборах
   async isAdmittedVoter(someNodeHash: string, checkingPublicKey: string): Promise<boolean> {
     let currentNode = await this.nodeReadService.findByHash(someNodeHash);
-    while (currentNode.type > 1) {
+    while (currentNode.type > NodeType.VOTING_CHAIN_HEAD) {
       currentNode = await this.nodeReadService.findByHash(currentNode.parentHash);
-      if (2 === currentNode.type && checkingPublicKey === currentNode.admittedUserPublicKey) {
+      if (NodeType.REGISTER_VOTER === currentNode.type && checkingPublicKey === currentNode.admittedUserPublicKey) {
         return true;
       }
     }
@@ -143,8 +143,7 @@ export class NodeValidationService {
 
   // валидация узла четвертого типа:
   async validateVoteNode(createNodeDto: NodeDto): Promise<void> {
-    // type = 4
-    if (4 !== createNodeDto.type) throw new BadRequestException(this.ERROR_TEXT, 'Incorrect type!');
+    if (NodeType.VOTE !== createNodeDto.type) throw new BadRequestException(this.ERROR_TEXT, 'Incorrect type!');
 
     // хеш и подпись валидны
     const objectForCheck: object = this.getNodeForCryptoCheck(createNodeDto);
@@ -160,7 +159,7 @@ export class NodeValidationService {
     // нет ли у родителя других потомков, если тип 4, или уже голоса с этим ключом, если тип 3
     const parentNodeChildren: Node[] = await this.nodeReadService.findNodeChildren(parentNode.hash);
     switch (parentNode.type) {
-      case 3:
+      case NodeType.START_VOTING:
         if (await this.nodeReadService.getFirstVoteByStartNodeHash(parentNode.hash, createNodeDto.authorPublicKey)) {
           throw new BadRequestException(
             this.ERROR_TEXT,
@@ -168,7 +167,7 @@ export class NodeValidationService {
           );
         }
         break;
-      case 4:
+      case NodeType.VOTE:
         if (parentNodeChildren.length > 0) {
           throw new BadRequestException(this.ERROR_TEXT, 'Parent node already have children!');
         }
@@ -179,7 +178,7 @@ export class NodeValidationService {
 
     // не начались ли еще выборы (получить тип 3)
     let startVotingNode: Node = null;
-    if (parentNode.type === 3) {
+    if (parentNode.type === NodeType.START_VOTING) {
       startVotingNode = parentNode;
     } else {
       startVotingNode = await this.nodeReadService.getStartVotingNodeByAnyVoteHash(parentNode.hash);
@@ -189,28 +188,28 @@ export class NodeValidationService {
     }
 
     // корректность кандидата (получить тип 3)
-    if (!startVotingNode.candidates.includes(createNodeDto.selectedVariant))
+    if ( ! startVotingNode.candidates.includes(createNodeDto.selectedVariant))
       throw new BadRequestException(this.ERROR_TEXT, 'Selected candidate doesn`t exist!');
 
     // зарегистрирован ли ключ автора на эти выборы (получить тип 3)
-    if (!(await this.isAdmittedVoter(startVotingNode.hash, createNodeDto.authorPublicKey)))
+    if ( ! (await this.isAdmittedVoter(startVotingNode.hash, createNodeDto.authorPublicKey)))
       throw new BadRequestException(this.ERROR_TEXT, 'Your are not registered voter!');
   }
 
   async validateExternalNode(externalNodeDto: NodeDto): Promise<void> {
     // проверить тип ноды и соотв. валидировать разными методами
     switch (externalNodeDto.type) {
-      case 1:
+      case NodeType.VOTING_CHAIN_HEAD:
         await this.validateChainHeadNode(externalNodeDto, true);
         break;
-      case 2:
+      case NodeType.REGISTER_VOTER:
         // проблема: мы не знаем приватного ключа выборов, не можем его сохранить, а значить и провалидировать подпись
         await this.validateRegisterVoterNode(externalNodeDto, 0);
         break;
-      case 3:
+      case NodeType.START_VOTING:
         // проблема: мы не знаем приватного ключа выборов, не можем его сохранить, а значить и провалидировать подпись
         break;
-      case 4:
+      case NodeType.VOTE:
         await this.validateVoteNode(externalNodeDto);
         break;
       default:

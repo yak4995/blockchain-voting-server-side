@@ -2,11 +2,17 @@ import { IsString } from 'class-validator';
 import { ApiModelProperty } from '@nestjs/swagger';
 
 export class SignPacketDTO {
-  @ApiModelProperty()
+  @ApiModelProperty({
+    description: 'произвольная строка',
+    required: true,
+  })
   @IsString()
   readonly message: string;
 
-  @ApiModelProperty()
+  @ApiModelProperty({
+    description: 'приватный ключ для подписи',
+    required: true,
+  })
   @IsString()
   readonly privateKey: string;
 }

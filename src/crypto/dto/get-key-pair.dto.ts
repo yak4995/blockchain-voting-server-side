@@ -1,8 +1,12 @@
 import { ApiModelProperty } from '@nestjs/swagger';
 
 export class KeyPairDTO {
-  @ApiModelProperty()
+  @ApiModelProperty({
+    description: 'публичный ключ',
+  })
   readonly publicKey: string;
-  @ApiModelProperty()
+  @ApiModelProperty({
+    description: 'привязанный к нему приватный ключ',
+  })
   readonly privateKey: string;
 }

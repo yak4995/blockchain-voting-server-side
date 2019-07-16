@@ -8,9 +8,9 @@ import { ValidatorPipe } from '../common/validator.pipe';
 import { MsgDTO } from './dto/message.dto';
 import { SignObjectPacketDTO } from './dto/sign-object-packet.dto';
 import { MsgObjDTO } from './dto/msg-object.dto';
-import { ApiBearerAuth, ApiUseTags, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiUseTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 
-@ApiUseTags('BCVS')
+@ApiUseTags('Crypto')
 @Controller('crypto')
 export class CryptoController {
   constructor(private readonly rsaService: RSAService) {}
@@ -18,6 +18,9 @@ export class CryptoController {
   // создаёт и сохраняет пару ключей, возвращая публичный ключ
   // (требует авторизации, потому что вызывается клиентом при создании выборов для генерирования ключа выборов)
   @ApiBearerAuth()
+  @ApiOperation({
+    title: 'создаёт и сохраняет пару ключей, возвращая публичный ключ',
+  })
   @ApiResponse({ status: 200, description: 'Created public key', type: 'string'})
   @Get('get-voting-pkey')
   @UseGuards(JwtAuthGuard)
@@ -28,6 +31,9 @@ export class CryptoController {
   }
 
   // endpoint-helper для получения пары ключей для избирателя (но без сохранения их в базе сервера)
+  @ApiOperation({
+    title: 'endpoint-helper для получения пары ключей для избирателя (но без сохранения их в базе сервера)',
+  })
   @ApiResponse({ status: 200, description: 'Created keys pair', type: KeyPairDTO})
   @Get('gen-keypair')
   async genKeyPair(): Promise<KeyPairDTO> {
@@ -35,6 +41,9 @@ export class CryptoController {
   }
 
   // endpoint-helper для получения SHA-256 хеша от произвольной строки
+  @ApiOperation({
+    title: 'endpoint-helper для получения SHA-256 хеша от произвольной строки',
+  })
   @ApiResponse({ status: 200, description: 'Hash', type: 'string'})
   @Post('get-hash')
   @UsePipes(ValidatorPipe)
@@ -43,6 +52,9 @@ export class CryptoController {
   }
 
   // endpoint-helper для получения SHA-256 хеша от произвольного объекта
+  @ApiOperation({
+    title: 'endpoint-helper для получения SHA-256 хеша от произвольного объекта',
+  })
   @ApiResponse({ status: 200, description: 'Hash', type: 'string'})
   @Post('get-object-hash')
   @UsePipes(ValidatorPipe)
@@ -51,6 +63,9 @@ export class CryptoController {
   }
 
   // endpoint-helper для создания ЭЦП для произвольной строки
+  @ApiOperation({
+    title: 'endpoint-helper для создания ЭЦП для произвольной строки',
+  })
   @ApiResponse({ status: 200, description: 'Signature', type: 'string'})
   @Post('sign')
   @UsePipes(ValidatorPipe)
@@ -59,6 +74,9 @@ export class CryptoController {
   }
 
   // endpoint-helper для создания ЭЦП для произвольного объекта
+  @ApiOperation({
+    title: 'endpoint-helper для создания ЭЦП для произвольного объекта',
+  })
   @ApiResponse({ status: 200, description: 'Signature', type: 'string'})
   @Post('sign-object')
   @UsePipes(ValidatorPipe)
@@ -67,6 +85,9 @@ export class CryptoController {
   }
 
   // endpoint-helper для верификации ЭЦП
+  @ApiOperation({
+    title: 'endpoint-helper для верификации ЭЦП',
+  })
   @ApiResponse({ status: 200, description: 'Validation result', type: 'string'})
   @Post('verify')
   @UsePipes(ValidatorPipe)

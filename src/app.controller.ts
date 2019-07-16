@@ -1,9 +1,8 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AppLogger } from './logger/app-logger.service';
-import { ApiUseTags, ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiOperation } from '@nestjs/swagger';
 
-@ApiUseTags('BCVS')
 @Controller()
 export class AppController {
   constructor(
@@ -11,7 +10,14 @@ export class AppController {
     @Inject('logger') private readonly logger: AppLogger /*, @InjectQueue('store') private readonly queue: Queue*/,
   ) {}
 
-  @ApiResponse({ status: 200, description: 'Test message', type: 'string'})
+  @ApiOperation({
+    title: 'Тест доступности приложения',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Hello World',
+    type: 'string',
+  })
   @Get()
   root(): string {
     this.logger.warn('Root');
