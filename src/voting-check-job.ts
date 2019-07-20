@@ -6,7 +6,7 @@ import { NodeReadService } from './nodes/services/node-read.service';
 import { NodePersistanceService } from './nodes/services/node-persistance.service';
 import { RegisteredVotersService } from './nodes/services/registered-voters.service';
 import { NodeModule } from './nodes/node.module';
-import { NodeType } from 'nodes/enums/nodeType.enum';
+import { NodeType } from './nodes/enums/nodeType.enum';
 
 async function votingCheckJobRun() {
   const

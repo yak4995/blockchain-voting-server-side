@@ -3,7 +3,6 @@ import { HttpModule, HttpService, NotFoundException, BadRequestException } from 
 import { AppLogger } from '../logger/app-logger.service';
 import { DatabaseModule } from '../database/database.module';
 import { AuthModule } from '../auth/auth.module';
-import { ConfigModule } from '../config/config.module';
 import { NodeController } from './node.controller';
 import { nodeProviders } from './node.providers';
 import { RSAService } from '../crypto/rsa.service';
@@ -17,6 +16,7 @@ import { RegisteredVotersService } from './services/registered-voters.service';
 import { NodeValidationService } from './services/node-validation.service';
 import { BullModule } from 'nest-bull';
 import { NodeSenderProcessor } from './processors/node-sender.processor';
+import RegisteredVoterRepository from './repositories/registered-voter.repository';
 
 // votingPublicKey - первый в парах в базе
 const correctChainHead: NodeDto = {
@@ -117,6 +117,7 @@ describe('NodeController tests', () => {
       controllers: [NodeController],
       providers: [
         mockAppLoggerProvider,
+        RegisteredVoterRepository,
         NodeReadService,
         NodeValidationService,
         NodePersistanceService,

@@ -7,7 +7,7 @@ import { Node } from '../interfaces/node.interface';
 import { NodeDto } from '../dto/create-node.dto';
 import { NodeReadService } from './node-read.service';
 import { RegisteredVotersService } from './registered-voters.service';
-import { NodeType } from 'nodes/enums/nodeType.enum';
+import { NodeType } from '../enums/nodeType.enum';
 
 @Injectable()
 export class NodeValidationService {

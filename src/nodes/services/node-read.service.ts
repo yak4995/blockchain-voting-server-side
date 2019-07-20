@@ -1,7 +1,7 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { Node } from '../interfaces/node.interface';
-import { NodeType } from 'nodes/enums/nodeType.enum';
+import { NodeType } from '../enums/nodeType.enum';
 
 @Injectable()
 export class NodeReadService {

@@ -1,6 +1,6 @@
 import { IsString, IsArray, IsInt, Min, Max, ValidateIf, IsNotEmpty, ArrayNotEmpty } from 'class-validator';
 import { ApiModelProperty } from '@nestjs/swagger';
-import { NodeType } from 'nodes/enums/nodeType.enum';
+import { NodeType } from '../enums/nodeType.enum';
 
 // DTO (data transfer object) - обьекты таких классов определяют формат данных, передаваемых по сетям
 // Можно было б использовать интерфейсы, но Nest их теряет при трансформации в валидаторах
