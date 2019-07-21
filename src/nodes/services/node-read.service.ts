@@ -1,27 +1,31 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { Model } from 'mongoose';
 import { Node } from '../interfaces/node.interface';
 import { NodeType } from '../enums/nodeType.enum';
+import BaseRepository from '../../common/base.repository';
 
 @Injectable()
 export class NodeReadService {
-  constructor(@Inject('NodeModelToken') private readonly nodeModel: Model<Node>) {}
+  constructor(
+    @Inject('NodeRepository')
+    private readonly nodeRepository: BaseRepository<Node>,
+  ) {}
 
   // получение всех выборов (узлов первого типа), пока без пагинации
   getAllChainHeads(): Promise<Node[]> {
-    return this.nodeModel.find({ type: 1 }).exec();
+    return this.nodeRepository.findByAndCriteria({ type: 1 });
   }
 
   // поиск узла по хешу
   async findByHash(hash: string): Promise<Node> {
-    const foundNode: Node = await this.nodeModel.findOne({ hash }).exec();
+    const foundNode: Node = await this.nodeRepository.findOneByAndCriteria({ hash });
     if (foundNode) return foundNode;
     else throw new BadRequestException('Incorrect hash!', 'Current node with specified hash does not exist!');
   }
 
   // поиск родительского узла по хешу
   async findParentByHash(hash: string): Promise<Node> {
-    const foundParentNode = await this.nodeModel.findOne({ hash: (await this.findByHash(hash)).parentHash }).exec();
+    const currentNode = await this.findByHash(hash);
+    const foundParentNode = await this.nodeRepository.findOneByAndCriteria({ hash: currentNode.parentHash });
     if (foundParentNode) return foundParentNode;
     else throw new BadRequestException('Incorrect hash!', 'Parent node does not exist!');
   }
@@ -37,7 +41,7 @@ export class NodeReadService {
 
   // получение "прямых детей" узла
   findNodeChildren(hash: string): Promise<Node[]> {
-    return this.nodeModel.find({ parentHash: hash }).exec();
+    return this.nodeRepository.findByAndCriteria({ parentHash: hash });
   }
 
   // получить последний узел в цепочке, за исключением 4 типа
@@ -59,12 +63,12 @@ export class NodeReadService {
     const now: Date = new Date();
     // $gte - greater than or equal
     // $lt - less than
-    return this.nodeModel.find({ type: 1, startTime: { $lt: now }, endTime: { $gte: now } }).exec();
+    return this.nodeRepository.findByAndCriteria({ type: 1, startTime: { $lt: now }, endTime: { $gte: now } });
   }
 
   // получить первый голос на выборах избирателя по хешу узла 3-ого типа и его публичного ключа
   getFirstVoteByStartNodeHash(startVotingNodeHash: string, voterPublicKey: string): Promise<Node> {
-    return this.nodeModel.findOne({ parentHash: startVotingNodeHash, authorPublicKey: voterPublicKey }).exec();
+    return this.nodeRepository.findOneByAndCriteria({ parentHash: startVotingNodeHash, authorPublicKey: voterPublicKey });
   }
 
   // получить последний(самый актуальный) голос избирателя по хешу узла 4-ого типа
@@ -93,9 +97,10 @@ export class NodeReadService {
 
   async getVotingResult(hash: string) {
     const startVotingNode = await this.getLastChainNode(hash);
-    const finalVotesPromises = (await this.findNodeChildren(startVotingNode.hash))
-      .map(voteNode => this.getLastVote(voteNode.hash));
-    return (await Promise.all(finalVotesPromises))
+    const nodeChildren = await this.findNodeChildren(startVotingNode.hash);
+    const finalVotesPromises = nodeChildren.map(voteNode => this.getLastVote(voteNode.hash));
+    const finalVotes = await Promise.all(finalVotesPromises);
+    return finalVotes
       .reduce(
         (resultPresentator: object[], voteNode: Node) => {
           resultPresentator[voteNode.selectedVariant] =

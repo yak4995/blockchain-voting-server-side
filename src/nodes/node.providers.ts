@@ -2,6 +2,7 @@ import { Connection } from 'mongoose';
 import { NodeSchema } from './schemas/node.schema';
 import { RegisteredVoterSchema } from './schemas/registered-voters.schema';
 import RegisteredVoterRepository from './repositories/registered-voter.repository';
+import NodeRepository from './repositories/node.repository';
 
 export const nodeProviders = [
   {
@@ -21,5 +22,9 @@ export const nodeProviders = [
   {
     provide: 'RegisteredVoterRepository',
     useClass: RegisteredVoterRepository,
+  },
+  {
+    provide: 'NodeRepository',
+    useClass: NodeRepository,
   },
 ];
