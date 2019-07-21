@@ -3,14 +3,12 @@ import { Node } from '../interfaces/node.interface';
 import { Model } from 'mongoose';
 import { Inject, Injectable } from '@nestjs/common';
 import { NodeDto } from '../dto/create-node.dto';
+import { INode } from '../interfaces/i-node.interface';
 
 @Injectable()
-export default class NodeRepository extends BaseRepository<Node> {
-    constructor(
-        @Inject('NodeModelToken')
-        nodeModel: Model<Node>,
-    ) {
-        super(nodeModel);
+export default class NodeRepository extends BaseRepository<INode> {
+    constructor(@Inject('NodeModelToken') private readonly model: Model<Node>) {
+        super();
     }
 
     create(createNodeDto: NodeDto): Promise<Node> {

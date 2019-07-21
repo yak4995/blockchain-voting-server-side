@@ -1,11 +1,8 @@
-import { Model, Document } from 'mongoose';
-
 export type Criteria<T> = {
     [P in keyof T]?: any;
 };
 
-export default abstract class BaseRepository<T extends Document> {
-    constructor(protected readonly model: Model<T>) {}
+export default abstract class BaseRepository<T> {
     abstract create(...args: any[]): Promise<T>;
     abstract findAll(): Promise<T[]>;
     abstract findById(id: number): Promise<T>;

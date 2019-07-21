@@ -3,8 +3,7 @@ import { INestApplicationContext } from '@nestjs/common';
 import { Job, DoneCallback } from 'bull';
 import { AxiosModule } from '../../axios/axios.module';
 import { AxiosService } from '../../axios/axios.service';
-import { NodeDto } from '../dto/create-node.dto';
-import { Node } from '../interfaces/node.interface';
+import { INode } from '../interfaces/i-node.interface';
 import { AppLogger } from '../../logger/app-logger.service';
 
 export const NodeSenderProcessor = async (job: Job, done: DoneCallback) => {
@@ -13,8 +12,8 @@ export const NodeSenderProcessor = async (job: Job, done: DoneCallback) => {
   const logger: AppLogger = app.get<AppLogger>(AppLogger);
 
   try {
-    const node: Node = job.data;
-    const nodeDto: NodeDto = {
+    const node: INode = job.data;
+    const nodeDto: INode = {
       hash: node.hash,
       parentHash: node.parentHash,
       authorPublicKey: node.authorPublicKey,

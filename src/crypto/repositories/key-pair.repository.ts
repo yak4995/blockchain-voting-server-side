@@ -2,14 +2,12 @@ import BaseRepository, { Criteria } from '../../common/base.repository';
 import { Model } from 'mongoose';
 import { Inject, Injectable } from '@nestjs/common';
 import { KeyPair } from '../../crypto/interfaces/key-pair.interface';
+import { IKeyPair } from '../interfaces/i-key-pair.interface';
 
 @Injectable()
-export default class KeyPairRepository extends BaseRepository<KeyPair> {
-    constructor(
-        @Inject('KeyPairModelToken')
-        keyPairModel: Model<KeyPair>,
-    ) {
-        super(keyPairModel);
+export default class KeyPairRepository extends BaseRepository<IKeyPair> {
+    constructor(@Inject('KeyPairModelToken') private readonly model: Model<KeyPair>) {
+        super();
     }
 
     create(publicKey: string, privateKey: string): Promise<KeyPair> {

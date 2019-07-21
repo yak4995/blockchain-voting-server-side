@@ -1,15 +1,13 @@
 import BaseRepository, { Criteria } from '../../common/base.repository';
 import { Model } from 'mongoose';
 import { Inject, Injectable } from '@nestjs/common';
-import { KnownServer } from 'nodes/interfaces/known-server.interface';
+import { KnownServer } from '../interfaces/known-server.interface';
+import { IKnownServer } from '../interfaces/i-known-server.interface';
 
 @Injectable()
-export default class KnownServerRepository extends BaseRepository<KnownServer> {
-    constructor(
-        @Inject('KnownServersModelToken')
-        knownServerModel: Model<KnownServer>,
-    ) {
-        super(knownServerModel);
+export default class KnownServerRepository extends BaseRepository<IKnownServer> {
+    constructor(@Inject('KnownServersModelToken') private readonly model: Model<KnownServer>) {
+        super();
     }
 
     create(url: string): Promise<KnownServer> {

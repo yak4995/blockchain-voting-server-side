@@ -1,9 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { KeyPair } from './interfaces/key-pair.interface';
-import { KeyPairDTO } from './dto/get-key-pair.dto';
 import * as NodeRSA from 'node-rsa';
 import { sha256 } from 'js-sha256';
 import BaseRepository from '../common/base.repository';
+import { IKeyPair } from './interfaces/i-key-pair.interface';
 
 @Injectable()
 export class RSAService {
@@ -11,12 +10,12 @@ export class RSAService {
 
   constructor(
     @Inject('KeyPairRepository')
-    private readonly keyPairRepository: BaseRepository<KeyPair>,
+    private readonly keyPairRepository: BaseRepository<IKeyPair>,
   ) {
     this.RSAKey = new NodeRSA();
   }
 
-  async generateKeyPair(): Promise<KeyPairDTO> {
+  async generateKeyPair(): Promise<IKeyPair> {
     const RSAKeyGenerator = new NodeRSA().generateKeyPair();
     return {
       publicKey: RSAKeyGenerator.exportKey('pkcs8-public-pem'),
@@ -24,7 +23,7 @@ export class RSAService {
     };
   }
 
-  async saveKeyPair(keyPair: KeyPairDTO) {
+  async saveKeyPair(keyPair: IKeyPair) {
     return this.keyPairRepository.create(keyPair.publicKey, keyPair.privateKey);
   }
 
@@ -58,7 +57,7 @@ export class RSAService {
   }
 
   async getPrivateKeyByPublic(publicKey: string): Promise<string> {
-    const privateKey: KeyPair[] = await this.keyPairRepository.findByAndCriteria({ publicKey });
+    const privateKey: IKeyPair[] = await this.keyPairRepository.findByAndCriteria({ publicKey });
     return privateKey.length > 0 ? privateKey[0].privateKey : '';
   }
 }

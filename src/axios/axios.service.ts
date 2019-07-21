@@ -1,10 +1,10 @@
 import { Injectable, BadRequestException, HttpService, Inject } from '@nestjs/common';
 import { ConfigService } from '../config/config.service';
 import { AxiosAuthDTO } from './dto/axios-auth.dto';
-import { NodeDto } from '../nodes/dto/create-node.dto';
 import * as jwt_decode from 'jwt-decode';
-import { KnownServer } from '../nodes/interfaces/known-server.interface';
+import { IKnownServer } from './interfaces/i-known-server.interface';
 import BaseRepository from '../common/base.repository';
+import { INode } from '../nodes/interfaces/i-node.interface';
 
 @Injectable()
 export class AxiosService {
@@ -18,7 +18,7 @@ export class AxiosService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     @Inject('KnownServerRepository')
-    private readonly knownServerRepository: BaseRepository<KnownServer>,
+    private readonly knownServerRepository: BaseRepository<IKnownServer>,
   ) {
     this.clientUrl = configService.get('OAUTH_APP_URL');
     this.OAuthClientId = configService.get('OAUTH_APP_ID');
@@ -61,7 +61,7 @@ export class AxiosService {
     }
   }
 
-  async pushNode(node: NodeDto): Promise<void> {
+  async pushNode(node: INode): Promise<void> {
     try {
       const externalServers = await this.knownServerRepository.findAll();
       await Promise.all(externalServers.map(server =>

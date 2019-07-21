@@ -2,14 +2,12 @@ import BaseRepository, { Criteria } from '../../common/base.repository';
 import { RegisteredVoter } from '../interfaces/registered-voter.interface';
 import { Model } from 'mongoose';
 import { Inject, Injectable } from '@nestjs/common';
+import { IRegisteredVoter } from 'nodes/interfaces/i-registered-voter.interface';
 
 @Injectable()
-export default class RegisteredVoterRepository extends BaseRepository<RegisteredVoter> {
-    constructor(
-        @Inject('RegisteredVoterModelToken')
-        registeredVoterModel: Model<RegisteredVoter>,
-    ) {
-        super(registeredVoterModel);
+export default class RegisteredVoterRepository extends BaseRepository<IRegisteredVoter> {
+    constructor(@Inject('RegisteredVoterModelToken') private readonly model: Model<RegisteredVoter>) {
+        super();
     }
 
     create(votingHash: string, voterId: number): Promise<RegisteredVoter> {

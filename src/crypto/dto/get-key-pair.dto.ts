@@ -1,6 +1,7 @@
 import { ApiModelProperty } from '@nestjs/swagger';
+import { IKeyPair } from '../interfaces/i-key-pair.interface';
 
-export class KeyPairDTO {
+export class KeyPairDTO implements IKeyPair {
   @ApiModelProperty({
     description: 'публичный ключ',
   })

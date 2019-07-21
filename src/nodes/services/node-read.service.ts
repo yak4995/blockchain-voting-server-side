@@ -1,29 +1,29 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { Node } from '../interfaces/node.interface';
 import { NodeType } from '../enums/nodeType.enum';
 import BaseRepository from '../../common/base.repository';
+import { INode } from '../interfaces/i-node.interface';
 
 @Injectable()
 export class NodeReadService {
   constructor(
     @Inject('NodeRepository')
-    private readonly nodeRepository: BaseRepository<Node>,
+    private readonly nodeRepository: BaseRepository<INode>,
   ) {}
 
   // получение всех выборов (узлов первого типа), пока без пагинации
-  getAllChainHeads(): Promise<Node[]> {
+  getAllChainHeads(): Promise<INode[]> {
     return this.nodeRepository.findByAndCriteria({ type: 1 });
   }
 
   // поиск узла по хешу
-  async findByHash(hash: string): Promise<Node> {
-    const foundNode: Node = await this.nodeRepository.findOneByAndCriteria({ hash });
+  async findByHash(hash: string): Promise<INode> {
+    const foundNode: INode = await this.nodeRepository.findOneByAndCriteria({ hash });
     if (foundNode) return foundNode;
     else throw new BadRequestException('Incorrect hash!', 'Current node with specified hash does not exist!');
   }
 
   // поиск родительского узла по хешу
-  async findParentByHash(hash: string): Promise<Node> {
+  async findParentByHash(hash: string): Promise<INode> {
     const currentNode = await this.findByHash(hash);
     const foundParentNode = await this.nodeRepository.findOneByAndCriteria({ hash: currentNode.parentHash });
     if (foundParentNode) return foundParentNode;
@@ -31,7 +31,7 @@ export class NodeReadService {
   }
 
   // поиск головы цепочки по хешу узла, который в этой цепочке состоит
-  async findChainHeadByNodeHash(hash: string): Promise<Node> {
+  async findChainHeadByNodeHash(hash: string): Promise<INode> {
     let currentNode = await this.findByHash(hash);
     while (NodeType.VOTING_CHAIN_HEAD < currentNode.type) {
       currentNode = await this.findByHash(currentNode.parentHash);
@@ -40,12 +40,12 @@ export class NodeReadService {
   }
 
   // получение "прямых детей" узла
-  findNodeChildren(hash: string): Promise<Node[]> {
+  findNodeChildren(hash: string): Promise<INode[]> {
     return this.nodeRepository.findByAndCriteria({ parentHash: hash });
   }
 
   // получить последний узел в цепочке, за исключением 4 типа
-  async getLastChainNode(hash: string): Promise<Node> {
+  async getLastChainNode(hash: string): Promise<INode> {
     let currentNode = await this.findByHash(hash);
     while (NodeType.VOTE > currentNode.type) {
       const childNodes = await this.findNodeChildren(currentNode.hash);
@@ -59,7 +59,7 @@ export class NodeReadService {
   }
 
   // получение выборов, для которые уже начались, но еще не закончились
-  getAllChainHeadsInCurrentBoundaries(): Promise<Node[]> {
+  getAllChainHeadsInCurrentBoundaries(): Promise<INode[]> {
     const now: Date = new Date();
     // $gte - greater than or equal
     // $lt - less than
@@ -67,14 +67,14 @@ export class NodeReadService {
   }
 
   // получить первый голос на выборах избирателя по хешу узла 3-ого типа и его публичного ключа
-  getFirstVoteByStartNodeHash(startVotingNodeHash: string, voterPublicKey: string): Promise<Node> {
+  getFirstVoteByStartNodeHash(startVotingNodeHash: string, voterPublicKey: string): Promise<INode> {
     return this.nodeRepository.findOneByAndCriteria({ parentHash: startVotingNodeHash, authorPublicKey: voterPublicKey });
   }
 
   // получить последний(самый актуальный) голос избирателя по хешу узла 4-ого типа
-  async getLastVote(voteNodeHash: string): Promise<Node> {
+  async getLastVote(voteNodeHash: string): Promise<INode> {
     // валидация узла startVotingNodeHash и voterPublicKey
-    let result: Node = await this.findByHash(voteNodeHash);
+    let result: INode = await this.findByHash(voteNodeHash);
     if (NodeType.VOTE !== result.type) throw new BadRequestException('Incorrect hash!', 'Node with this hash doesn`t have type 4!');
     while (result) {
       const resultChildren = await this.findNodeChildren(result.hash);
@@ -87,8 +87,8 @@ export class NodeReadService {
     return result;
   }
 
-  async getStartVotingNodeByAnyVoteHash(voteNodeHash: string): Promise<Node> {
-    let result: Node = await this.findParentByHash(voteNodeHash);
+  async getStartVotingNodeByAnyVoteHash(voteNodeHash: string): Promise<INode> {
+    let result: INode = await this.findParentByHash(voteNodeHash);
     while (NodeType.START_VOTING < result.type) {
       result = await this.findParentByHash(result.hash);
     }
@@ -102,7 +102,7 @@ export class NodeReadService {
     const finalVotes = await Promise.all(finalVotesPromises);
     return finalVotes
       .reduce(
-        (resultPresentator: object[], voteNode: Node) => {
+        (resultPresentator: object[], voteNode: INode) => {
           resultPresentator[voteNode.selectedVariant] =
             resultPresentator[voteNode.selectedVariant] ? ++resultPresentator[voteNode.selectedVariant] : 1;
           return resultPresentator;
