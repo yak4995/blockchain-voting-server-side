@@ -3,8 +3,8 @@ import { ConfigService } from '../config/config.service';
 import { AxiosAuthDTO } from './dto/axios-auth.dto';
 import { NodeDto } from '../nodes/dto/create-node.dto';
 import * as jwt_decode from 'jwt-decode';
-import { Model } from 'mongoose';
 import { KnownServer } from '../nodes/interfaces/known-server.interface';
+import BaseRepository from '../common/base.repository';
 
 @Injectable()
 export class AxiosService {
@@ -17,7 +17,8 @@ export class AxiosService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-    @Inject('KnownServersModelToken') private readonly knownServerModel: Model<KnownServer>,
+    @Inject('KnownServerRepository')
+    private readonly knownServerRepository: BaseRepository<KnownServer>,
   ) {
     this.clientUrl = configService.get('OAUTH_APP_URL');
     this.OAuthClientId = configService.get('OAUTH_APP_ID');
@@ -62,16 +63,17 @@ export class AxiosService {
 
   async pushNode(node: NodeDto): Promise<void> {
     try {
-      (await this.knownServerModel.find()).forEach(async (server: KnownServer) => {
-        await this.httpService
+      const externalServers = await this.knownServerRepository.findAll();
+      await Promise.all(externalServers.map(server =>
+        this.httpService
           .post(server.url + '/nodes/get-external-node', {
             headers: {
               Accept: 'application/json',
             },
             node,
           })
-          .toPromise();
-      });
+          .toPromise(),
+      ));
     } catch (e) {
       throw new BadRequestException(this.ERROR_TEXT, `We have not being able to push node`);
     }

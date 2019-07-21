@@ -3,7 +3,7 @@ import { DatabaseModule } from '../database/database.module';
 import { LoggerModule } from '../logger/app-logger.module';
 import { AxiosController } from './axios.controller';
 import { AxiosService } from './axios.service';
-import { bullProviders } from './bull.providers';
+import { axiosProviders } from './axios.providers';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { bullProviders } from './bull.providers';
     HttpModule,
   ],
   controllers: [AxiosController],
-  providers: [AxiosService, ...bullProviders],
+  providers: [AxiosService, ...axiosProviders],
   exports: [AxiosService],
 })
 export class AxiosModule {}

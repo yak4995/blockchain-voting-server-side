@@ -16,7 +16,6 @@ import { RegisteredVotersService } from './services/registered-voters.service';
 import { NodeValidationService } from './services/node-validation.service';
 import { BullModule } from 'nest-bull';
 import { NodeSenderProcessor } from './processors/node-sender.processor';
-import RegisteredVoterRepository from './repositories/registered-voter.repository';
 
 // votingPublicKey - первый в парах в базе
 const correctChainHead: NodeDto = {
@@ -117,7 +116,6 @@ describe('NodeController tests', () => {
       controllers: [NodeController],
       providers: [
         mockAppLoggerProvider,
-        RegisteredVoterRepository,
         NodeReadService,
         NodeValidationService,
         NodePersistanceService,

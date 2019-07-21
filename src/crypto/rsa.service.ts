@@ -1,15 +1,18 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { KeyPair } from './interfaces/key-pair.interface';
-import { Model } from 'mongoose';
 import { KeyPairDTO } from './dto/get-key-pair.dto';
 import * as NodeRSA from 'node-rsa';
 import { sha256 } from 'js-sha256';
+import BaseRepository from '../common/base.repository';
 
 @Injectable()
 export class RSAService {
   private RSAKey: NodeRSA;
 
-  constructor(@Inject('KeyPairModelToken') private readonly keyPairModel: Model<KeyPair>) {
+  constructor(
+    @Inject('KeyPairRepository')
+    private readonly keyPairRepository: BaseRepository<KeyPair>,
+  ) {
     this.RSAKey = new NodeRSA();
   }
 
@@ -22,7 +25,7 @@ export class RSAService {
   }
 
   async saveKeyPair(keyPair: KeyPairDTO) {
-    return new this.keyPairModel(keyPair).save();
+    return this.keyPairRepository.create(keyPair.publicKey, keyPair.privateKey);
   }
 
   async getMsgSignature(payload: string, privateKey: string): Promise<string> {
@@ -55,7 +58,7 @@ export class RSAService {
   }
 
   async getPrivateKeyByPublic(publicKey: string): Promise<string> {
-    const privateKey: KeyPair[] = await this.keyPairModel.find({ publicKey });
+    const privateKey: KeyPair[] = await this.keyPairRepository.findByAndCriteria({ publicKey });
     return privateKey.length > 0 ? privateKey[0].privateKey : '';
   }
 }

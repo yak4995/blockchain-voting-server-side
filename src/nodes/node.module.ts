@@ -12,7 +12,6 @@ import { NodePersistanceService } from './services/node-persistance.service';
 import { RegisteredVotersService } from './services/registered-voters.service';
 import { BullModule } from 'nest-bull';
 import { NodeSenderProcessor } from './processors/node-sender.processor';
-import RegisteredVoterRepository from './repositories/registered-voter.repository';
 
 @Module({
   imports: [
@@ -48,7 +47,6 @@ import RegisteredVoterRepository from './repositories/registered-voter.repositor
   ],
   controllers: [NodeController],
   providers: [
-    RegisteredVoterRepository,
     NodeValidationService,
     NodeReadService,
     NodePersistanceService,
