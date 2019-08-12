@@ -12,6 +12,8 @@ import { NodePersistanceService } from './services/node-persistance.service';
 import { RegisteredVotersService } from './services/registered-voters.service';
 import { BullModule } from 'nest-bull';
 import { NodeSenderProcessor } from './processors/node-sender.processor';
+import { ConfigService } from 'config/config.service';
+import { ConfigModule } from 'config/config.module';
 
 @Module({
   imports: [
@@ -27,22 +29,25 @@ import { NodeSenderProcessor } from './processors/node-sender.processor';
     AuthModule,
     CryptoModule,
     AxiosModule,
-    BullModule.forRoot({
-      name: 'store',
-      options: {
-        redis: {
-          port: Number(process.env.REDIS_PORT),
-          host: process.env.REDIS_URL,
-          password: process.env.REDIS_PASS,
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        options: {
+          redis: {
+            port: Number(configService.get('REDIS_PORT')),
+            host: configService.get('REDIS_URL'),
+            password: configService.get('REDIS_PASS'),
+          },
         },
-      },
-      processors: [
-        {
-          concurrency: 1,
-          name: 'nodeSenderProcessor',
-          callback: NodeSenderProcessor,
-        },
-      ],
+        processors: [
+          {
+            concurrency: 1,
+            name: 'nodeSenderProcessor',
+            callback: NodeSenderProcessor,
+          },
+        ],
+      }),
     }),
   ],
   controllers: [NodeController],

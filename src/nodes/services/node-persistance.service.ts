@@ -19,7 +19,7 @@ export class NodePersistanceService {
     private readonly registeredVotersService: RegisteredVotersService,
     @Inject('NodeRepository')
     private readonly nodeRepository: BaseRepository<INode>,
-    @InjectQueue('store')
+    @InjectQueue()
     private readonly queue: Queue,
   ) {}
 

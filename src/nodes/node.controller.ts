@@ -1,5 +1,4 @@
 import { Controller, Get, UseGuards, Post, Body, UsePipes, Inject, Param } from '@nestjs/common';
-import { Node } from './interfaces/node.interface';
 import { NodeDto } from './dto/create-node.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AppLogger } from '../logger/app-logger.service';
@@ -10,6 +9,7 @@ import { NodePersistanceService } from './services/node-persistance.service';
 import { Queue } from 'bull';
 import { InjectQueue } from 'nest-bull';
 import { ApiBearerAuth, ApiUseTags, ApiResponse, ApiImplicitParam, ApiOperation } from '@nestjs/swagger';
+import { INode } from './interfaces/i-node.interface';
 
 @ApiUseTags('Nodes')
 @Controller('nodes')
@@ -17,11 +17,12 @@ export class NodeController {
   constructor(
     private readonly nodeReadService: NodeReadService,
     private readonly nodePersistanceService: NodePersistanceService,
-    @InjectQueue('store') private readonly queue: Queue,
+    @InjectQueue()
+    private readonly queue: Queue,
     @Inject('logger') private readonly loggerService: AppLogger,
   ) {}
 
-  broadcastNode(node: Node) {
+  broadcastNode(node: INode) {
     this.queue.add(
       node,
       {
@@ -45,7 +46,7 @@ export class NodeController {
     type: NodeDto,
   })
   @Get(':hash')
-  async getNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+  async getNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<INode> {
     try {
       return await this.nodeReadService.findByHash(hash);
     } catch (e) {
@@ -65,7 +66,7 @@ export class NodeController {
     isArray: true,
   })
   @Get()
-  async getAllChainHeads(): Promise<Node[]> {
+  async getAllChainHeads(): Promise<INode[]> {
     try {
       return await this.nodeReadService.getAllChainHeads();
     } catch (e) {
@@ -88,7 +89,7 @@ export class NodeController {
     type: NodeDto,
   })
   @Get('parent/:hash')
-  async getParentNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+  async getParentNodeByHash(@Param('hash', ParseStringPipe) hash: string): Promise<INode> {
     try {
       return await this.nodeReadService.findParentByHash(hash);
     } catch (e) {
@@ -111,7 +112,7 @@ export class NodeController {
     type: NodeDto,
   })
   @Get('head-by-hash/:hash')
-  async getChainHeadBySomeChildHash(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+  async getChainHeadBySomeChildHash(@Param('hash', ParseStringPipe) hash: string): Promise<INode> {
     try {
       return await this.nodeReadService.findChainHeadByNodeHash(hash);
     } catch (e) {
@@ -135,7 +136,7 @@ export class NodeController {
     isArray: true,
   })
   @Get('children/:hash')
-  async getChainChildren(@Param('hash', ParseStringPipe) hash: string): Promise<Node[]> {
+  async getChainChildren(@Param('hash', ParseStringPipe) hash: string): Promise<INode[]> {
     try {
       return await this.nodeReadService.findNodeChildren(hash);
     } catch (e) {
@@ -158,7 +159,7 @@ export class NodeController {
     type: NodeDto,
   })
   @Get('last/:hash')
-  async getLastChainNode(@Param('hash', ParseStringPipe) hash: string): Promise<Node> {
+  async getLastChainNode(@Param('hash', ParseStringPipe) hash: string): Promise<INode> {
     try {
       return await this.nodeReadService.getLastChainNode(hash);
     } catch (e) {
@@ -181,7 +182,7 @@ export class NodeController {
     type: NodeDto,
   })
   @Get('get-last-vote/:hash')
-  async getLastVote(@Param('hash', ParseStringPipe) voteNodeHash: string): Promise<Node> {
+  async getLastVote(@Param('hash', ParseStringPipe) voteNodeHash: string): Promise<INode> {
     try {
       return await this.nodeReadService.getLastVote(voteNodeHash);
     } catch (e) {
@@ -203,9 +204,9 @@ export class NodeController {
   @Post('create-chain')
   @UseGuards(JwtAuthGuard) // AuthGuard так как мы не передали ему стратегию, использует её по умолч. (для OAuth2 пришлось бы передать 'bearer')
   @UsePipes(ValidatorPipe)
-  async createChain(@Body() createNodeDto: NodeDto): Promise<Node> {
+  async createChain(@Body() createNodeDto: NodeDto): Promise<INode> {
     try {
-      const createdNode: Node = await this.nodePersistanceService.createChain(createNodeDto);
+      const createdNode: INode = await this.nodePersistanceService.createChain(createNodeDto);
       // хоть и асинхронная задача, но мы не ждем подтверждения, используя await
       this.broadcastNode(createdNode);
       return createdNode;
@@ -234,9 +235,13 @@ export class NodeController {
   })
   @Post('register-voter/:voterId/:accessToken')
   @UsePipes(ValidatorPipe)
-  async registerVoter(@Body() createNodeDto: NodeDto, @Param('voterId') voterId: number, @Param('accessToken') accessToken: string): Promise<Node> {
+  async registerVoter(
+    @Body() createNodeDto: NodeDto,
+    @Param('voterId') voterId: number,
+    @Param('accessToken') accessToken: string,
+  ): Promise<INode> {
     try {
-      const createdNode: Node = await this.nodePersistanceService.registerVoter(createNodeDto, voterId, accessToken);
+      const createdNode: INode = await this.nodePersistanceService.registerVoter(createNodeDto, voterId, accessToken);
       this.broadcastNode(createdNode);
       return createdNode;
     } catch (e) {
@@ -256,9 +261,9 @@ export class NodeController {
   })
   @Post('vote')
   @UsePipes(ValidatorPipe)
-  async registerVote(@Body() createNodeDto: NodeDto): Promise<Node> {
+  async registerVote(@Body() createNodeDto: NodeDto): Promise<INode> {
     try {
-      const createdNode: Node = await this.nodePersistanceService.registerVote(createNodeDto);
+      const createdNode: INode = await this.nodePersistanceService.registerVote(createNodeDto);
       this.broadcastNode(createdNode);
       return createdNode;
     } catch (e) {
@@ -278,9 +283,9 @@ export class NodeController {
   })
   @Post('get-external-node')
   @UsePipes(ValidatorPipe)
-  async getExternalNode(@Body() externalNodeDto: NodeDto): Promise<Node> {
+  async getExternalNode(@Body() externalNodeDto: NodeDto): Promise<INode> {
     try {
-      const createdNode: Node = await this.nodePersistanceService.pushExternalNode(externalNodeDto);
+      const createdNode: INode = await this.nodePersistanceService.pushExternalNode(externalNodeDto);
       await this.broadcastNode(createdNode);
       return createdNode;
     } catch (e) {
